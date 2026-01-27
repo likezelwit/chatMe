@@ -1,36 +1,4 @@
-const WebSocket = require('ws');
-const wss = new WebSocket.Server({ port: process.env.PORT || 8080 });
-
-const clients = new Map();
-
-wss.on('connection', (ws) => {
-    ws.on('message', (data) => {
-        const msg = JSON.parse(data);
-        
-        // Register client dengan Public Key mereka
-        if (msg.type === 'register') {
-            clients.set(msg.pubKey, ws);
-            console.log(`User registered: ${msg.pubKey.slice(0, 10)}...`);
-        }
-
-        // Relay pesan ke target tanpa menyentuh enkripsi
-        if (msg.type === 'message') {
-            const targetWs = clients.get(msg.targetPubKey);
-            if (targetWs && targetWs.readyState === WebSocket.OPEN) {
-                targetWs.send(JSON.stringify({
-                    from: msg.fromPubKey,
-                    payload: msg.payload // Ini ciphertext (acak)
-                }));
-            }
-        }
-    });
-
-    ws.on('close', () => {
-        // Cleanup on disconnect
-        for (let [pubKey, clientWs] of clients.entries()) {
-            if (clientWs === ws) { clients.delete(pubKey); break; }
-        }
-    });
-});
-
-console.log("Relay Server running...");
+:root { --bg: #0f172a; --text: #f8fafc; --accent: #38bdf8; }
+body { background: var(--bg); color: var(--text); font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+.container { text-align: center; padding: 2rem; border-radius: 1rem; background: #1e293b; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5); }
+button { background: var(--accent); color: #000; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; }
