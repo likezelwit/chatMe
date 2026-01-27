@@ -1,30 +1,44 @@
 "use strict";
+import { generateMnemonic, createIdentity, saveIdentity } from './crypto.js';
 
-/*
-  Security Guards:
-  - No tracking
-  - No analytics
-  - No fingerprinting
-*/
-
-// Enforce Secure Context (WebCrypto requirement)
+// 1. Cek Keamanan Lingkungan
 if (!window.isSecureContext) {
-  alert("Aplikasi ini hanya bisa dijalankan melalui HTTPS.");
-  throw new Error("Insecure context blocked");
+  alert("Wajib HTTPS!");
+  document.body.innerHTML = "<h1>Gunakan HTTPS untuk chat aman.</h1>";
 }
 
-// Clickjacking protection (client-side fallback)
-if (window.top !== window.self) {
-  document.body.innerHTML = "";
-  throw new Error("Embedding blocked by security policy");
-}
+// 2. Clickjacking protection
+if (window.top !== window.self) document.body.innerHTML = "";
 
-// Navigation handler
 const enterBtn = document.getElementById("enterBtn");
+const landingView = document.getElementById("landing-view");
+const setupView = document.getElementById("setup-view");
+const mnemonicDisplay = document.getElementById("mnemonic-display");
 
-if (enterBtn) {
-  enterBtn.addEventListener("click", () => {
-    // Redirect to chat entry point
-    window.location.href = "/welcome/";
-  });
-}
+// 3. Handler Tombol Masuk
+enterBtn?.addEventListener("click", async () => {
+  try {
+    enterBtn.innerText = "Generating...";
+    enterBtn.disabled = true;
+
+    // Proses Kriptografi
+    const mnemonic = generateMnemonic();
+    const keys = await createIdentity();
+    await saveIdentity(keys);
+
+    // Tampilkan Mnemonic ke user
+    mnemonicDisplay.innerText = mnemonic;
+    landingView.style.display = "none";
+    setupView.style.display = "block";
+
+  } catch (err) {
+    console.error(err);
+    alert("Error: " + err);
+    enterBtn.disabled = false;
+  }
+});
+
+document.getElementById("confirmBtn")?.addEventListener("click", () => {
+  // Pindah ke halaman chat utama
+  window.location.href = "/chat.html";
+});
