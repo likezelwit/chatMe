@@ -1,18 +1,30 @@
 "use strict";
 
-// Secure context check
+import { hasIdentity, generateIdentity, exportPublicKey } from "./crypto.js";
+
 if (!window.isSecureContext) {
-  alert("Aplikasi ini harus dijalankan lewat HTTPS.");
+  alert("HTTPS required.");
   throw new Error("Insecure context");
 }
 
-// Clickjacking fallback
 if (window.top !== window.self) {
   document.body.innerHTML = "";
   throw new Error("Framing blocked");
 }
 
-document.getElementById("continueBtn").addEventListener("click", () => {
-  alert("Tahap berikutnya: Setup Identitas 🔐");
-  // nanti redirect ke setup / chat
+const btn = document.getElementById("continueBtn");
+
+btn.addEventListener("click", async () => {
+  if (await hasIdentity()) {
+    alert("Identitas sudah ada. Siap ke chat.");
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Membuat identitas…";
+
+  const { publicKey } = await generateIdentity();
+  const pub = await exportPublicKey(publicKey);
+
+  alert("Identitas dibuat.\n\nPublic Key:\n" + pub);
 });
