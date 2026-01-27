@@ -1,1 +1,15 @@
 @import "../style.css";
+
+.step {
+  margin-bottom: 20px;
+}
+
+.hidden {
+  display: none;
+}
+
+.checkbox {
+  display: block;
+  margin: 16px 0;
+  font-size: 0.9rem;
+}
