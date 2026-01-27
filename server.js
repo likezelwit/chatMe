@@ -1,23 +1,36 @@
-import WebSocket, { WebSocketServer } from "ws";
+const WebSocket = require('ws');
+const wss = new WebSocket.Server({ port: process.env.PORT || 8080 });
 
-const wss = new WebSocketServer({ port: 8080 });
+const clients = new Map();
 
-/*
-  Dumb relay:
-  - no logging message content
-  - no storage
-  - no inspection
-*/
+wss.on('connection', (ws) => {
+    ws.on('message', (data) => {
+        const msg = JSON.parse(data);
+        
+        // Register client dengan Public Key mereka
+        if (msg.type === 'register') {
+            clients.set(msg.pubKey, ws);
+            console.log(`User registered: ${msg.pubKey.slice(0, 10)}...`);
+        }
 
-wss.on("connection", (socket) => {
-  socket.on("message", (data) => {
-    // relay to everyone else
-    wss.clients.forEach((client) => {
-      if (client !== socket && client.readyState === WebSocket.OPEN) {
-        client.send(data);
-      }
+        // Relay pesan ke target tanpa menyentuh enkripsi
+        if (msg.type === 'message') {
+            const targetWs = clients.get(msg.targetPubKey);
+            if (targetWs && targetWs.readyState === WebSocket.OPEN) {
+                targetWs.send(JSON.stringify({
+                    from: msg.fromPubKey,
+                    payload: msg.payload // Ini ciphertext (acak)
+                }));
+            }
+        }
     });
-  });
+
+    ws.on('close', () => {
+        // Cleanup on disconnect
+        for (let [pubKey, clientWs] of clients.entries()) {
+            if (clientWs === ws) { clients.delete(pubKey); break; }
+        }
+    });
 });
 
-console.log("🔐 WebSocket Relay running on ws://localhost:8080");
+console.log("Relay Server running...");
