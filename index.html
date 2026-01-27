@@ -1,43 +1,18 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PrivateChat — E2EE</title>
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none';">
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <title>PrivateChat | Zero-Knowledge</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main class="container">
-    <h1>PrivateChat</h1>
-    <p class="tagline">Server tidak bisa membaca pesanmu.</p>
-
-    <div id="landing-view">
-      <section class="card">
-        <h2>Prinsip Privasi</h2>
-        <ul>
-          <li>🔐 Enkripsi di sisi client</li>
-          <li>🚫 Server tidak menyimpan kunci</li>
-          <li>🕵️ Minim metadata</li>
-        </ul>
-      </section>
-      <button id="enterBtn">Mulai Setup Identitas</button>
+    <div class="container">
+        <h1>🔐 PrivateChat</h1>
+        <p>Chat tanpa jejak. Enkripsi total di browser lo.</p>
+        <button id="startBtn">Mulai Setup Privasi</button>
     </div>
-
-    <div id="setup-view" style="display: none;">
-      <section class="card">
-        <h2>Simpan Kode Rahasia Lo!</h2>
-        <p style="font-size: 0.8rem; color: var(--accent); margin-bottom: 10px;">Catat 12-16 karakter ini. Tanpa ini, chat lo ilang selamanya.</p>
-        <div id="mnemonic-display" style="background: #000; padding: 15px; border-radius: 8px; word-break: break-all; font-family: monospace; border: 1px solid var(--accent);"></div>
-      </section>
-      <button id="confirmBtn">Gue Udah Simpan</button>
-    </div>
-
-    <footer>
-      <p>Open-source • No tracking • Privacy first</p>
-    </footer>
-  </main>
-
-  <script src="main.js" type="module"></script>
+    <script>
+        document.getElementById('startBtn').onclick = () => window.location.href = '/welcome/';
+    </script>
 </body>
 </html>
