@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Welcome — PrivateChat</title>
 
-  <!-- CSP STRICT -->
+  <!-- Content Security Policy -->
   <meta http-equiv="Content-Security-Policy"
     content="
       default-src 'none';
       script-src 'self';
       style-src 'self';
       img-src 'self';
-      connect-src 'self' ws:;
+      connect-src 'self';
       font-src 'none';
       media-src 'none';
       frame-ancestors 'none';
@@ -27,25 +27,58 @@
   <main class="container">
     <h1>Selamat Datang 👋</h1>
 
-    <p class="tagline">
-      PrivateChat melindungi pesanmu dengan
-      <strong>End-to-End Encryption</strong>.
-    </p>
-
-    <section class="card">
-      <ul>
-        <li>🔐 Kunci dibuat & disimpan di perangkatmu</li>
-        <li>🚫 Server tidak bisa membaca pesan</li>
-        <li>🕵️ Metadata diminimalkan</li>
-        <li>☁️ Backup terenkripsi (opsional)</li>
-      </ul>
+    <!-- STEP 1 -->
+    <section class="card step" id="step1">
+      <p>
+        <strong>PrivateChat</strong> melindungi pesanmu dengan
+        <strong>End-to-End Encryption</strong>.
+      </p>
+      <p>
+        Tidak ada akun pusat. Tidak ada pelacakan.
+      </p>
+      <button data-next="step2">Lanjut</button>
     </section>
 
-    <button id="continueBtn">Lanjut</button>
+    <!-- STEP 2 -->
+    <section class="card step hidden" id="step2">
+      <h2>Peringatan Privasi</h2>
+      <p>
+        🔐 Chat & kontak disimpan <strong>hanya di browser ini</strong>.
+      </p>
+      <p>
+        ❗ Menghapus data browser = chat hilang permanen.
+      </p>
 
-    <footer>
-      <p>Tidak perlu akun • Tidak ada tracking</p>
-    </footer>
+      <label class="checkbox">
+        <input type="checkbox" id="agreeBox" />
+        Saya mengerti dan setuju
+      </label>
+
+      <button id="agreeBtn" disabled>Lanjut</button>
+    </section>
+
+    <!-- STEP 3 -->
+    <section class="card step hidden" id="step3">
+      <h2>Identitas Aman</h2>
+      <p>
+        Identitas kamu dibuat secara lokal di perangkat ini.
+        Kunci privat <strong>tidak pernah</strong> dikirim ke server.
+      </p>
+
+      <button id="createIdentityBtn">
+        Buat Identitas Aman
+      </button>
+    </section>
+
+    <!-- STEP 4 -->
+    <section class="card step hidden" id="step4">
+      <h2>Siap Digunakan 🎉</h2>
+      <p>
+        Identitas berhasil dibuat.
+      </p>
+      <button id="enterChatBtn">Masuk ke Chat</button>
+    </section>
+
   </main>
 
   <script src="main.js" defer></script>
