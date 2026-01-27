@@ -25,6 +25,6 @@ const enterBtn = document.getElementById("enterBtn");
 if (enterBtn) {
   enterBtn.addEventListener("click", () => {
     // Redirect to chat entry point
-    window.location.href = "/welcome/index.html";
+    window.location.href = "/welcome/";
   });
 }
