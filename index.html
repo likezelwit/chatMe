@@ -30,7 +30,7 @@
                 </div>
             </div>
             
-            <button id="startBtn" class="primary-button">Mulai Setup Privasi</button>
+            <button id="startBtn" class="primary-button">Memeriksa Sesi...</button>
         </main>
 
         <footer>
@@ -39,8 +39,24 @@
     </div>
 
     <script>
-        document.getElementById('startBtn').onclick = () => {
-            window.location.href = './welcome/index.html';
+        const startBtn = document.getElementById('startBtn');
+        const hasKey = localStorage.getItem('privateKey');
+
+        // Update teks tombol berdasarkan status login
+        if (hasKey) {
+            startBtn.innerText = "Lanjutkan ke Obrolan";
+        } else {
+            startBtn.innerText = "Mulai Setup Privasi";
+        }
+
+        startBtn.onclick = () => {
+            if (hasKey) {
+                // Jika sudah punya kunci, langsung ke chat
+                window.location.href = './chat/index.html';
+            } else {
+                // Jika belum, lakukan setup dulu
+                window.location.href = './welcome/index.html';
+            }
         };
     </script>
 </body>
