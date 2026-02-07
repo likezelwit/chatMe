@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>PrivateChat - Room</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div class="chat-container">
+        <header>
+            <h3>🔐 Chat Terenkripsi</h3>
+            <small id="my-id">ID Anda: Loading...</small>
+        </header>
+
+        <div id="chat-box" class="chat-box">
+            </div>
+
+        <div class="input-area">
+            <input type="text" id="targetId" placeholder="Masukkan Public Key Tujuan">
+            <textarea id="messageInput" placeholder="Ketik pesan rahasia..."></textarea>
+            <button id="sendBtn">Kirim Pesan</button>
+        </div>
+    </div>
+    <script type="module" src="chat.js"></script>
+</body>
+</html>
