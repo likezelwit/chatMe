@@ -1,36 +1,46 @@
 const WebSocket = require('ws');
-const wss = new WebSocket.Server({ port: process.env.PORT || 8080 });
+const PORT = process.env.PORT || 8080;
+const wss = new WebSocket.Server({ port: PORT });
 
+// Map untuk menyimpan user berdasarkan Public Key mereka
 const clients = new Map();
 
 wss.on('connection', (ws) => {
     ws.on('message', (data) => {
-        const msg = JSON.parse(data);
-        
-        // Register client dengan Public Key mereka
-        if (msg.type === 'register') {
-            clients.set(msg.pubKey, ws);
-            console.log(`User registered: ${msg.pubKey.slice(0, 10)}...`);
-        }
+        try {
+            const msg = JSON.parse(data);
 
-        // Relay pesan ke target tanpa menyentuh enkripsi
-        if (msg.type === 'message') {
-            const targetWs = clients.get(msg.targetPubKey);
-            if (targetWs && targetWs.readyState === WebSocket.OPEN) {
-                targetWs.send(JSON.stringify({
-                    from: msg.fromPubKey,
-                    payload: msg.payload // Ini ciphertext (acak)
-                }));
+            // Registrasi User
+            if (msg.type === 'register') {
+                clients.set(msg.pubKey, ws);
+                ws.pubKey = msg.pubKey; // Simpan referensi di objek ws
+                console.log(`User Online: ${msg.pubKey.slice(0, 15)}...`);
             }
+
+            // Meneruskan Pesan (Relay)
+            if (msg.type === 'message') {
+                const targetWs = clients.get(msg.targetPubKey);
+                if (targetWs && targetWs.readyState === WebSocket.OPEN) {
+                    targetWs.send(JSON.stringify({
+                        type: 'incoming',
+                        from: msg.fromPubKey,
+                        payload: msg.payload // Ciphertext mentah
+                    }));
+                } else {
+                    ws.send(JSON.stringify({ type: 'error', content: 'Target tidak ditemukan/offline.' }));
+                }
+            }
+        } catch (e) {
+            console.error("Format pesan salah");
         }
     });
 
     ws.on('close', () => {
-        // Cleanup on disconnect
-        for (let [pubKey, clientWs] of clients.entries()) {
-            if (clientWs === ws) { clients.delete(pubKey); break; }
+        if (ws.pubKey) {
+            clients.delete(ws.pubKey);
+            console.log("User disconnected");
         }
     });
 });
 
-console.log("Relay Server running...");
+console.log(`Server PrivateChat aktif di port ${PORT}`);
