@@ -4,83 +4,93 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Welcome — PrivateChat</title>
-
-  <!-- Content Security Policy -->
-  <meta http-equiv="Content-Security-Policy"
-    content="
-      default-src 'none';
-      script-src 'self';
-      style-src 'self';
-      img-src 'self';
-      connect-src 'self';
-      font-src 'none';
-      media-src 'none';
-      frame-ancestors 'none';
-      base-uri 'none';
-      form-action 'none';
-    ">
-
-  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Inline CSS dari welcome/style.css */
+    :root { --primary: #25d366; --bg: #111b21; --card: #202c33; --text: #e9edef; }
+    body { background: var(--bg); color: var(--text); font-family: sans-serif; display: flex; justify-content: center; padding: 20px; }
+    .container { max-width: 400px; width: 100%; text-align: center; }
+    .card { background: var(--card); padding: 20px; border-radius: 8px; margin-top: 20px; }
+    .hidden { display: none; }
+    .step { margin-bottom: 20px; }
+    .checkbox { display: block; margin: 16px 0; font-size: 0.9rem; text-align: left; }
+    button { background: var(--primary); color: white; border: none; padding: 12px; width: 100%; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    button:disabled { background: #3b4a54; cursor: not-allowed; }
+  </style>
 </head>
 <body>
 
   <main class="container">
     <h1>Selamat Datang 👋</h1>
 
-    <!-- STEP 1 -->
     <section class="card step" id="step1">
-      <p>
-        <strong>PrivateChat</strong> melindungi pesanmu dengan
-        <strong>End-to-End Encryption</strong>.
-      </p>
-      <p>
-        Tidak ada akun pusat. Tidak ada pelacakan.
-      </p>
+      <p><strong>PrivateChat</strong> melindungi pesanmu dengan <strong>End-to-End Encryption</strong>.</p>
       <button data-next="step2">Lanjut</button>
     </section>
 
-    <!-- STEP 2 -->
     <section class="card step hidden" id="step2">
       <h2>Peringatan Privasi</h2>
-      <p>
-        🔐 Chat & kontak disimpan <strong>hanya di browser ini</strong>.
-      </p>
-      <p>
-        ❗ Menghapus data browser = chat hilang permanen.
-      </p>
-
+      <p>🔐 Chat & kontak disimpan <strong>hanya di browser ini</strong>.</p>
       <label class="checkbox">
-        <input type="checkbox" id="agreeBox" />
-        Saya mengerti dan setuju
+        <input type="checkbox" id="agreeBox" /> Saya mengerti dan setuju
       </label>
-
       <button id="agreeBtn" disabled>Lanjut</button>
     </section>
 
-    <!-- STEP 3 -->
     <section class="card step hidden" id="step3">
       <h2>Identitas Aman</h2>
-      <p>
-        Identitas kamu dibuat secara lokal di perangkat ini.
-        Kunci privat <strong>tidak pernah</strong> dikirim ke server.
-      </p>
-
-      <button id="createIdentityBtn">
-        Buat Identitas Aman
-      </button>
+      <p>Kunci privat <strong>tidak pernah</strong> dikirim ke server.</p>
+      <button id="createIdentityBtn">Buat Identitas Aman</button>
     </section>
 
-    <!-- STEP 4 -->
     <section class="card step hidden" id="step4">
       <h2>Siap Digunakan 🎉</h2>
-      <p>
-        Identitas berhasil dibuat.
-      </p>
+      <p>Identitas berhasil dibuat.</p>
       <button id="enterChatBtn">Masuk ke Chat</button>
     </section>
-
   </main>
 
-  <script src="main.js" defer></script>
+  <script type="module">
+    import { generateIdentity, exportPublicKey } from '../crypto.js';
+
+    // Clickjacking protection
+    if (window.top !== window.self) document.body.innerHTML = "";
+
+    function showStep(id) {
+      document.querySelectorAll(".step").forEach(s => s.classList.add("hidden"));
+      document.getElementById(id).classList.remove("hidden");
+    }
+
+    // Navigasi
+    document.querySelectorAll("[data-next]").forEach(btn => {
+      btn.onclick = () => showStep(btn.dataset.next);
+    });
+
+    // Checkbox logic
+    const agreeBox = document.getElementById("agreeBox");
+    const agreeBtn = document.getElementById("agreeBtn");
+    agreeBox.onchange = () => agreeBtn.disabled = !agreeBox.checked;
+    agreeBtn.onclick = () => showStep("step3");
+
+    // Pembuatan Identitas Asli
+    document.getElementById("createIdentityBtn").onclick = async (e) => {
+      const btn = e.target;
+      btn.disabled = true;
+      btn.textContent = "Membuat identitas...";
+
+      try {
+        const keyPair = await generateIdentity();
+        const pubKeyB64 = await exportPublicKey(keyPair.publicKey);
+        localStorage.setItem("my_public_key", pubKeyB64); // Simpan ID untuk chat
+        showStep("step4");
+      } catch (err) {
+        alert("Gagal: " + err.message);
+        btn.disabled = false;
+      }
+    };
+
+    document.getElementById("enterChatBtn").onclick = () => {
+      window.location.href = "../chat/index.html";
+    };
+  </script>
 </body>
 </html>
