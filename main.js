@@ -1,44 +1,40 @@
 "use strict";
-import { generateMnemonic, createIdentity, saveIdentity } from './crypto.js';
-
-// 1. Cek Keamanan Lingkungan
-if (!window.isSecureContext) {
-  alert("Wajib HTTPS!");
-  document.body.innerHTML = "<h1>Gunakan HTTPS untuk chat aman.</h1>";
-}
-
-// 2. Clickjacking protection
-if (window.top !== window.self) document.body.innerHTML = "";
+import { generateMnemonic, createIdentity, exportPubKey, saveIdentity } from './crypto.js';
 
 const enterBtn = document.getElementById("enterBtn");
 const landingView = document.getElementById("landing-view");
 const setupView = document.getElementById("setup-view");
 const mnemonicDisplay = document.getElementById("mnemonic-display");
 
-// 3. Handler Tombol Masuk
+if (!window.isSecureContext) {
+    alert("Wajib menggunakan HTTPS!");
+}
+
 enterBtn?.addEventListener("click", async () => {
-  try {
-    enterBtn.innerText = "Generating...";
-    enterBtn.disabled = true;
+    try {
+        enterBtn.innerText = "Generating Keys...";
+        enterBtn.disabled = true;
 
-    // Proses Kriptografi
-    const mnemonic = generateMnemonic();
-    const keys = await createIdentity();
-    await saveIdentity(keys);
+        // 1. Generate Kunci & Mnemonic
+        const mnemonic = generateMnemonic();
+        const keys = await createIdentity();
+        const pubKeyB64 = await exportPubKey(keys.publicKey);
 
-    // Tampilkan Mnemonic ke user
-    mnemonicDisplay.innerText = mnemonic;
-    landingView.style.display = "none";
-    setupView.style.display = "block";
+        // 2. Simpan secara lokal
+        await saveIdentity(keys, pubKeyB64);
 
-  } catch (err) {
-    console.error(err);
-    alert("Error: " + err);
-    enterBtn.disabled = false;
-  }
+        // 3. Update UI
+        mnemonicDisplay.innerText = mnemonic;
+        landingView.style.display = "none";
+        setupView.style.display = "block";
+
+    } catch (err) {
+        console.error("Gagal Setup:", err);
+        alert("Terjadi kesalahan teknis.");
+        enterBtn.disabled = false;
+    }
 });
 
 document.getElementById("confirmBtn")?.addEventListener("click", () => {
-  // Pindah ke halaman chat utama
-  window.location.href = "/chat.html";
+    window.location.href = "/chat.html";
 });
