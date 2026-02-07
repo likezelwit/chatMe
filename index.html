@@ -2,17 +2,46 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PrivateChat | Zero-Knowledge</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <h1>🔐 PrivateChat</h1>
-        <p>Chat tanpa jejak. Enkripsi total di browser lo.</p>
-        <button id="startBtn">Mulai Setup Privasi</button>
+        <header>
+            <div class="logo">🔐</div>
+            <h1>PrivateChat</h1>
+            <p class="tagline">Obrolan Tanpa Jejak. Enkripsi Total di Browser Anda.</p>
+        </header>
+
+        <main class="hero">
+            <div class="feature-list">
+                <div class="feature-item">
+                    <span>🛡️</span>
+                    <p>End-to-End Encryption (RSA-2048)</p>
+                </div>
+                <div class="feature-item">
+                    <span>🚫</span>
+                    <p>Zero-Knowledge Server (Relay Only)</p>
+                </div>
+                <div class="feature-item">
+                    <span>💨</span>
+                    <p>Tanpa Database, Tanpa Jejak</p>
+                </div>
+            </div>
+            
+            <button id="startBtn" class="primary-button">Mulai Setup Privasi</button>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 PrivateChat. Semua kunci dibuat secara lokal.</p>
+        </footer>
     </div>
+
     <script>
-        document.getElementById('startBtn').onclick = () => window.location.href = '/welcome/';
+        document.getElementById('startBtn').onclick = () => {
+            window.location.href = './welcome/index.html';
+        };
     </script>
 </body>
 </html>
