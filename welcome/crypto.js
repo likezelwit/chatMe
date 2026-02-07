@@ -1,3 +1,4 @@
+// Lokasi: /crypto.js
 "use strict";
 
 const DB_NAME = "privatechat-keys";
@@ -17,30 +18,17 @@ function openDB() {
     });
 }
 
-export async function hasIdentity() {
-    const db = await openDB();
-    return new Promise((resolve) => {
-        const tx = db.transaction(STORE, "readonly");
-        const req = tx.objectStore(STORE).get("keypair");
-        req.onsuccess = () => resolve(!!req.result);
-        req.onerror = () => resolve(false);
-    });
-}
-
 export async function generateIdentity() {
-    // Membuat kunci ECDSA P-256 untuk tanda tangan digital
     const keyPair = await crypto.subtle.generateKey(
         { name: "ECDSA", namedCurve: "P-256" },
         false, 
         ["sign", "verify"]
     );
-
     const db = await openDB();
     const tx = db.transaction(STORE, "readwrite");
     const store = tx.objectStore(STORE);
-    
     return new Promise((resolve, reject) => {
-        const request = store.put(keyPair, "keypair");
+        store.put(keyPair, "keypair");
         tx.oncomplete = () => resolve(keyPair);
         tx.onerror = () => reject(tx.error);
     });
@@ -48,6 +36,5 @@ export async function generateIdentity() {
 
 export async function exportPublicKey(publicKey) {
     const raw = await crypto.subtle.exportKey("raw", publicKey);
-    // Mengubah ArrayBuffer ke Base64 yang aman untuk dikirim lewat WebSocket
     return btoa(String.fromCharCode(...new Uint8Array(raw)));
 }
