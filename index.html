@@ -3,61 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>chatMe</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div class="container">
-        <header>
-            <div class="logo">🔐</div>
-            <h1>PrivateChat</h1>
-            <p class="tagline">Obrolan Tanpa Jejak. Enkripsi Total di Browser Anda.</p>
-        </header>
-
-        <main class="hero">
-            <div class="feature-list">
-                <div class="feature-item">
-                    <span>🛡️</span>
-                    <p>End-to-End Encryption (RSA-2048)</p>
-                </div>
-                <div class="feature-item">
-                    <span>🚫</span>
-                    <p>Zero-Knowledge Server (Relay Only)</p>
-                </div>
-                <div class="feature-item">
-                    <span>💨</span>
-                    <p>Tanpa Database, Tanpa Jejak</p>
-                </div>
-            </div>
-            
-            <button id="startBtn" class="primary-button">Memeriksa Sesi...</button>
-        </main>
-
-        <footer>
-            <p>&copy; 2024 PrivateChat. Semua kunci dibuat secara lokal.</p>
-        </footer>
-    </div>
-
-    <script>
-        const startBtn = document.getElementById('startBtn');
-        const hasKey = localStorage.getItem('privateKey');
-
-        // Update teks tombol berdasarkan status login
-        if (hasKey) {
-            startBtn.innerText = "Lanjutkan ke Obrolan";
-        } else {
-            startBtn.innerText = "Mulai Setup Privasi";
+    <title>VowViw Cinema | Watch Party</title>
+    <style>
+        body {
+            margin: 0;
+            background: #000;
+            color: #fff;
+            font-family: 'Poppins', sans-serif;
+            overflow: hidden;
         }
 
-        startBtn.onclick = () => {
-            if (hasKey) {
-                // Jika sudah punya kunci, langsung ke chat
-                window.location.href = './chat/index.html';
-            } else {
-                // Jika belum, lakukan setup dulu
-                window.location.href = './welcome/index.html';
+        .cinema-container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Area Video */
+        .video-section {
+            flex: 3;
+            position: relative;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Overlay Transparan (Anti-Pause) */
+        .video-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            cursor: default;
+        }
+
+        /* Area Chat */
+        .chat-section {
+            flex: 1;
+            background: #111;
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid #333;
+        }
+
+        .chat-header {
+            padding: 15px;
+            background: #222;
+            text-align: center;
+            font-weight: bold;
+            color: #ff0055;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+            font-size: 14px;
+        }
+
+        .chat-input {
+            padding: 10px;
+            background: #222;
+            display: flex;
+        }
+
+        .chat-input input {
+            flex: 1;
+            background: #333;
+            border: none;
+            padding: 10px;
+            color: white;
+            border-radius: 5px;
+        }
+
+        /* Responsif Landscape */
+        @media (max-orientation: portrait) {
+            .cinema-container {
+                flex-direction: column;
             }
-        };
-    </script>
+            .chat-section {
+                height: 30vh;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="cinema-container">
+    <div class="video-section">
+        <div class="video-overlay" id="blocker"></div>
+        
+        <div id="player"></div>
+    </div>
+
+    <div class="chat-section">
+        <div class="chat-header">LIVE CHAT VOWVIW</div>
+        <div class="chat-messages" id="chat-box">
+            <p style="color: #888;">Selamat datang di Bioskop VowViw! 👋</p>
+        </div>
+        <div class="chat-input">
+            <input type="text" placeholder="Ketik pesan...">
+        </div>
+    </div>
+</div>
+
+<script>
+    // Load YouTube IFrame API
+    var tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    var firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+    var player;
+    var introId = 'VIDEO_ID_INTRO_KAMU'; // Ganti dengan ID YouTube Intro VowViw
+    var movieId = 'VIDEO_ID_FILM_USER'; // Ini nanti diisi dari input user
+
+    function onYouTubeIframeAPIReady() {
+        player = new YT.Player('player', {
+            videoId: introId, // Putar intro dulu
+            playerVars: {
+                'autoplay': 1,
+                'controls': 0, // Sembunyikan kontrol asli
+                'rel': 0,
+                'disablekb': 1 // Matikan keyboard (spasi buat pause)
+            },
+            events: {
+                'onStateChange': onPlayerStateChange
+            }
+        });
+    }
+
+    function onPlayerStateChange(event) {
+        // Jika intro selesai (ENDED), ganti ke film utama
+        if (event.data == YT.PlayerState.ENDED) {
+            player.loadVideoById(movieId);
+        }
+        
+        // Anti-Pause Manual: Jika video ter-pause, paksa jalan lagi
+        if (event.data == YT.PlayerState.PAUSED) {
+            player.playVideo();
+        }
+    }
+</script>
+
 </body>
 </html>
