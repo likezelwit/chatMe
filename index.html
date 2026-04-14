@@ -4,13 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VowViw Cinema | Watch Party</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        /* Tampilan Awal: Putih Bersih */
         body {
             margin: 0;
-            background: #000;
-            color: #fff;
+            background: #ffffff; 
+            color: #333;
             font-family: 'Poppins', sans-serif;
             overflow: hidden;
+            transition: background 1.5s ease; /* Efek transisi mati lampu */
+        }
+
+        /* Saat Lampu Mati */
+        body.dark-mode {
+            background: #000000;
+            color: #fff;
         }
 
         .cinema-container {
@@ -23,19 +32,25 @@
         .video-section {
             flex: 3;
             position: relative;
-            background: #000;
+            background: #f0f0f0; /* Abu terang saat lampu nyala */
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: background 1.5s ease;
         }
 
-        iframe {
+        body.dark-mode .video-section {
+            background: #000;
+        }
+
+        #player {
             width: 100%;
             height: 100%;
             border: none;
+            display: none; /* Sembunyikan sebelum mulai */
         }
 
-        /* Overlay Transparan (Anti-Pause) */
+        /* Overlay Anti-Pause */
         .video-overlay {
             position: absolute;
             top: 0;
@@ -43,25 +58,33 @@
             width: 100%;
             height: 100%;
             z-index: 10;
-            cursor: default;
+            display: none;
         }
 
         /* Area Chat */
         .chat-section {
             flex: 1;
-            background: #111;
+            background: #f9f9f9;
             display: flex;
             flex-direction: column;
+            border-left: 1px solid #ddd;
+            transition: background 1s, border 1s;
+        }
+
+        body.dark-mode .chat-section {
+            background: #111;
             border-left: 1px solid #333;
         }
 
         .chat-header {
             padding: 15px;
-            background: #222;
+            background: #eee;
             text-align: center;
             font-weight: bold;
             color: #ff0055;
         }
+
+        body.dark-mode .chat-header { background: #222; }
 
         .chat-messages {
             flex: 1;
@@ -72,37 +95,79 @@
 
         .chat-input {
             padding: 10px;
-            background: #222;
+            background: #eee;
             display: flex;
         }
 
+        body.dark-mode .chat-input { background: #222; }
+
         .chat-input input {
             flex: 1;
+            background: #fff;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        body.dark-mode .chat-input input {
             background: #333;
             border: none;
-            padding: 10px;
             color: white;
-            border-radius: 5px;
+        }
+
+        /* Dashboard Admin (Control Panel) */
+        #admin-panel {
+            position: absolute;
+            z-index: 100;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        #admin-panel input {
+            width: 300px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 2px solid #ff0055;
+            border-radius: 8px;
+        }
+
+        #admin-panel button {
+            padding: 12px 25px;
+            background: #ff0055;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
         }
 
         /* Responsif Landscape */
         @media (max-orientation: portrait) {
-            .cinema-container {
-                flex-direction: column;
-            }
-            .chat-section {
-                height: 30vh;
-            }
+            .cinema-container { flex-direction: column; }
+            .chat-section { height: 30vh; }
         }
     </style>
 </head>
 <body>
 
+<div id="admin-panel">
+    <h2 style="color: #ff0055;">VOWVIW SETUP</h2>
+    <input type="text" id="movie-url" placeholder="Masukkan Link YouTube Film...">
+    <br>
+    <button onclick="startCinema()">MULAI BIOSKOP 🚀</button>
+</div>
+
 <div class="cinema-container">
     <div class="video-section">
         <div class="video-overlay" id="blocker"></div>
-        
         <div id="player"></div>
+        <h1 id="placeholder-text" style="color: #ccc;">Menunggu Film Dimulai...</h1>
     </div>
 
     <div class="chat-section">
@@ -117,24 +182,40 @@
 </div>
 
 <script>
-    // Load YouTube IFrame API
     var tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     var firstScriptTag = document.getElementsByTagName('script')[0];
     firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
     var player;
-    var introId = '9v1atEBmUIc'; // Ganti dengan ID YouTube Intro VowViw
-    var movieId = 'VIDEO_ID_FILM_USER'; // Ini nanti diisi dari input user
+    var introId = '9v1atEBmUIc'; // Intro VowViw
+    var movieId = ''; 
 
     function onYouTubeIframeAPIReady() {
+        // Player disiapkan tapi tidak autoplay dulu
+    }
+
+    function startCinema() {
+        var urlInput = document.getElementById('movie-url').value;
+        if(!urlInput) return alert("Masukin linknya dulu dong!");
+        
+        movieId = extractVideoID(urlInput);
+
+        // 1. EFEK MATI LAMPU
+        document.body.classList.add('dark-mode');
+        document.getElementById('admin-panel').style.display = 'none';
+        document.getElementById('placeholder-text').style.display = 'none';
+        document.getElementById('player').style.display = 'block';
+        document.getElementById('blocker').style.display = 'block';
+
+        // 2. Jalankan Player dengan Intro
         player = new YT.Player('player', {
-            videoId: introId, // Putar intro dulu
+            videoId: introId,
             playerVars: {
                 'autoplay': 1,
-                'controls': 0, // Sembunyikan kontrol asli
+                'controls': 0,
                 'rel': 0,
-                'disablekb': 1 // Matikan keyboard (spasi buat pause)
+                'disablekb': 1
             },
             events: {
                 'onStateChange': onPlayerStateChange
@@ -143,15 +224,22 @@
     }
 
     function onPlayerStateChange(event) {
-        // Jika intro selesai (ENDED), ganti ke film utama
         if (event.data == YT.PlayerState.ENDED) {
-            player.loadVideoById(movieId);
+            let currentVideoId = player.getVideoData().video_id;
+            if (currentVideoId === introId) {
+                player.loadVideoById(movieId); 
+            }
         }
         
-        // Anti-Pause Manual: Jika video ter-pause, paksa jalan lagi
         if (event.data == YT.PlayerState.PAUSED) {
-            player.playVideo();
+            player.playVideo(); 
         }
+    }
+
+    function extractVideoID(url) {
+        var regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        var match = url.match(regExp);
+        return (match && match[2].length == 11) ? match[2] : null;
     }
 </script>
 
