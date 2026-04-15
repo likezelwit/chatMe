@@ -2,866 +2,1485 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ThMOvie | Ad-Free Watch Party</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ThMOvie (TMO) | Ad-Free Watch Party</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="icon" href="data:,">
+
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body {
-            background: #0a0a0a;
-            color: #fff;
-            font-family: 'Poppins', sans-serif;
-            overflow: hidden;
-            height: 100vh;
-            width: 100vw;
-            position: fixed;
-        }
         :root {
-            --bg: #050505;
-            --card: #121212;
+            --bg: #06060a;
+            --bg2: #0d0d14;
+            --bg3: #141420;
+            --text: #e8e8f0;
+            --muted: #6b6b80;
+            --accent: #ff2d55;
             --cobalt: #3b82f6;
-            --border: #222;
-            --success: #10b981;
-            --gold: #fbbf24;
+            --cobalt2: #1d4ed8;
+            --cyan: #00d4ff;
+            --gold: #f59e0b;
+            --green: #10b981;
+            --purple: #8b5cf6;
+            --border: rgba(255,255,255,0.08);
+            --border2: rgba(59,130,246,0.3);
         }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        
+        html, body {
+            height: 100%; overflow: hidden;
+            background: var(--bg); color: var(--text);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+        }
+
+        .hidden { display: none !important; }
+
+        /* ─── BUTTONS ─── */
         .btn {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 12px;
-            font-weight: 600;
-            font-family: inherit;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            text-align: center;
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+            padding: 11px 20px; border: none; border-radius: 10px; font-weight: 600;
+            cursor: pointer; font-family: inherit; font-size: 0.85rem;
+            transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+            user-select: none; white-space: nowrap;
         }
-        .btn:active { transform: scale(0.97); }
-        .btn-primary { background: var(--cobalt); color: white; }
-        .btn-secondary { background: var(--card); color: white; border: 1px solid var(--border); }
+        .btn:active { transform: scale(0.96); }
+        .btn:disabled { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+        .btn-primary { background: var(--accent); color: #fff; box-shadow: 0 4px 20px rgba(255,45,85,0.35); }
+        .btn-primary:hover { box-shadow: 0 6px 25px rgba(255,45,85,0.55); }
+        .btn-cobalt { background: var(--cobalt); color: #fff; box-shadow: 0 4px 20px rgba(59,130,246,0.35); }
+        .btn-cobalt:hover { background: var(--cobalt2); box-shadow: 0 6px 25px rgba(59,130,246,0.55); }
+        .btn-ghost { background: rgba(255,255,255,0.06); color: var(--text); border: 1px solid var(--border); }
+        .btn-ghost:hover { background: rgba(255,255,255,0.1); }
+        .btn-green { background: var(--green); color: #fff; box-shadow: 0 4px 15px rgba(16,185,129,0.3); }
+        .btn-full { width: 100%; }
+
+        /* ─── TOAST ─── */
         #toast-container {
-            position: fixed;
-            top: 70px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            width: 90%;
-            max-width: 350px;
-            pointer-events: none;
+            position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+            z-index: 9999; width: calc(100% - 32px); max-width: 380px;
+            pointer-events: none; display: flex; flex-direction: column; gap: 8px;
         }
         .toast {
-            background: rgba(0,0,0,0.9);
-            backdrop-filter: blur(8px);
+            background: rgba(20,20,32,0.97); border: 1px solid var(--border);
             border-left: 3px solid var(--cobalt);
-            padding: 12px 16px;
-            margin-bottom: 8px;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            animation: slideIn 0.3s ease;
+            color: var(--text); padding: 12px 16px; border-radius: 10px;
+            font-size: 0.82rem; line-height: 1.4;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+            animation: toastIn 0.25s ease; pointer-events: auto;
+            font-family: 'JetBrains Mono', monospace;
         }
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
+        .toast.success { border-left-color: var(--green); }
+        .toast.error { border-left-color: var(--accent); }
+        .toast.cobalt { border-left-color: var(--cyan); }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ─── LOADING ─── */
+        #loading-overlay {
+            position: fixed; inset: 0; background: rgba(6,6,10,0.95); z-index: 1000;
+            display: none; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
         }
-        #loading {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.95);
-            z-index: 2000;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-        }
-        #loading.active { display: flex; }
-        .spinner {
-            width: 45px;
-            height: 45px;
-            border: 3px solid #333;
-            border-top-color: var(--cobalt);
-            border-radius: 50%;
+        #loading-overlay.active { display: flex; }
+        .spin-ring {
+            width: 48px; height: 48px; border-radius: 50%;
+            border: 3px solid rgba(59,130,246,0.2); border-top-color: var(--cobalt);
             animation: spin 0.8s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-        #lobby {
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+        .loading-text { color: var(--muted); font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; }
+        .loading-bar { width: 200px; height: 3px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden; }
+        .loading-bar-fill { height: 100%; background: var(--cobalt); width: 0%; transition: width 0.3s; border-radius: 99px; }
+
+        /* ─── DB STATS BADGE ─── */
+        #db-stats {
+            position: fixed; top: 14px; right: 14px; z-index: 200;
+            background: rgba(59,130,246,0.15); border: 1px solid var(--border2);
+            color: var(--cobalt); padding: 7px 13px; border-radius: 99px;
+            font-size: 0.75rem; font-weight: 700; cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            transition: background 0.2s;
         }
+        #db-stats:hover { background: rgba(59,130,246,0.25); }
+
+        /* ─── LOBBY ─── */
+        #lobby-view { 
+            height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+            background: var(--bg);
+        }
+        
         header {
-            padding: 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(5,5,5,0.95);
-            border-bottom: 1px solid var(--border);
+            padding: 14px 16px; display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--border); background: rgba(6,6,10,0.9);
+            backdrop-filter: blur(10px); flex-shrink: 0; z-index: 10;
         }
-        .logo { font-size: 1.4rem; font-weight: 800; }
-        .logo span { color: var(--cobalt); }
+        .logo {
+            font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 700;
+            letter-spacing: -0.5px; user-select: none;
+        }
+        .logo .m { color: var(--cobalt); }
+        .logo .tag {
+            font-size: 0.6rem; background: rgba(59,130,246,0.15);
+            border: 1px solid var(--border2); color: var(--cobalt);
+            padding: 2px 6px; border-radius: 4px; margin-left: 6px; vertical-align: middle;
+        }
+        .rules-trigger {
+            font-size: 0.78rem; color: var(--muted); cursor: pointer; padding: 6px 10px;
+            border: 1px solid var(--border); border-radius: 6px;
+            transition: color 0.2s, border-color 0.2s;
+        }
+        .rules-trigger:hover { color: var(--text); border-color: var(--cobalt); }
+
+        /* Hero */
+        .hero { padding: 12px 14px; flex-shrink: 0; }
         .hero-card {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            margin: 16px;
-            border-radius: 20px;
-            padding: 16px;
-            display: flex;
-            gap: 15px;
-            align-items: center;
+            background: linear-gradient(135deg, var(--bg3) 0%, rgba(59,130,246,0.1) 100%);
+            border: 1px solid var(--border2); border-radius: 14px;
+            display: flex; align-items: center; gap: 14px; padding: 14px;
+            position: relative; overflow: hidden;
+        }
+        .hero-card::before {
+            content: ''; position: absolute; top: -30px; right: -30px;
+            width: 100px; height: 100px;
+            background: radial-gradient(circle, rgba(59,130,246,0.2) 0%, transparent 70%);
         }
         .hero-poster {
-            width: 90px;
-            height: 120px;
-            background: #2a2a3e;
-            border-radius: 12px;
-            background-size: cover;
-            background-image: url('https://picsum.photos/id/20/100/140');
+            width: 60px; height: 60px; border-radius: 10px;
+            background: linear-gradient(135deg, var(--cobalt2), var(--purple));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.8rem; flex-shrink: 0;
         }
-        .badge-cobalt {
-            background: var(--cobalt);
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 20px;
-            font-size: 0.6rem;
-            margin-bottom: 6px;
+        .hero-info h2 { font-size: 0.95rem; font-weight: 700; margin-bottom: 3px; }
+        .hero-info p { font-size: 0.72rem; color: var(--muted); }
+        .hero-badge {
+            position: absolute; top: 10px; right: 12px;
+            background: var(--cobalt); color: #fff;
+            font-size: 0.6rem; font-weight: 700; padding: 3px 8px;
+            border-radius: 99px; letter-spacing: 0.5px;
         }
-        .action-buttons {
-            display: flex;
-            gap: 12px;
-            padding: 0 16px 16px;
+
+        /* Booking Actions */
+        .booking-actions { 
+            padding: 10px 14px; display: flex; gap: 10px; flex-shrink: 0;
         }
-        .action-buttons .btn { flex: 1; }
+        .booking-actions .btn { flex: 1; }
+
+        /* Hallway */
         .hallway-label {
-            text-align: center;
-            font-size: 0.7rem;
-            color: #888;
-            margin: 8px 0;
+            text-align: center; font-size: 0.65rem; color: var(--muted);
+            text-transform: uppercase; letter-spacing: 2px; padding: 4px 0; flex-shrink: 0;
+            font-family: 'JetBrains Mono', monospace;
         }
         .hallway-wrapper {
-            flex: 1;
-            overflow-y: auto;
-            padding: 0 12px 20px;
+            flex: 1; display: flex; flex-direction: column; overflow: hidden;
+            position: relative; min-height: 0;
         }
-        .loket-container {
-            background: #0c0c0c;
-            border-radius: 20px;
-            margin-bottom: 20px;
-            border: 1px solid #1f1f1f;
-            overflow: hidden;
+        .hallway-container {
+            flex: 1; display: flex; overflow-x: auto; overflow-y: hidden;
+            scroll-snap-type: x mandatory; scroll-behavior: smooth;
         }
-        .loket-header {
-            background: #111;
-            padding: 12px 16px;
-            font-weight: 700;
-            color: var(--cobalt);
-            border-bottom: 1px solid #222;
+        .hallway-container::-webkit-scrollbar { display: none; }
+        .nav-arrow {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            width: 34px; height: 34px; border-radius: 50%; z-index: 20;
+            background: rgba(13,13,20,0.9); border: 1px solid var(--border);
+            color: var(--text); display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 0.9rem; backdrop-filter: blur(4px);
+            transition: background 0.2s, border-color 0.2s;
         }
-        .pintu-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 10px;
-            padding: 16px;
-        }
-        .pintu-item {
-            background: #1a1a1a;
-            border-radius: 12px;
-            padding: 12px 4px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            border: 1px solid #2a2a2a;
-        }
-        .pintu-item:active { transform: scale(0.96); background: #252525; }
-        .pintu-item.occupied {
-            border-color: var(--gold);
-            background: rgba(251,191,36,0.1);
-        }
-        .pintu-number { font-weight: 700; font-size: 1rem; }
-        .pintu-status { font-size: 0.6rem; color: #666; margin-top: 4px; }
-        .pintu-item.occupied .pintu-status { color: var(--gold); }
-        #create-room {
-            position: fixed;
-            inset: 0;
-            background: var(--bg);
-            z-index: 100;
-            transform: translateX(100%);
-            transition: transform 0.3s ease;
-            overflow-y: auto;
-            padding: 20px;
-        }
-        #create-room.active { transform: translateX(0); }
-        .form-group { margin-bottom: 20px; }
-        .form-label {
-            font-size: 0.8rem;
-            color: #aaa;
-            margin-bottom: 6px;
-            display: block;
-        }
-        .form-input, .form-select {
-            width: 100%;
-            padding: 14px;
-            background: #1a1a1a;
-            border: 1px solid #2c2c2c;
-            border-radius: 14px;
-            color: white;
-            font-family: inherit;
-            font-size: 0.9rem;
-        }
-        .verify-btn {
-            background: var(--cobalt);
-            width: 100%;
-            margin-top: 12px;
-            padding: 12px;
-            border-radius: 14px;
-            font-weight: 600;
-        }
-        #video-preview {
-            background: #0f0f1a;
-            border-radius: 16px;
-            padding: 15px;
-            margin: 15px 0;
-            display: none;
-            border: 1px solid #2c3e66;
-        }
-        #video-preview.active { display: block; }
-        .preview-row {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-        .preview-img {
-            width: 70px;
-            height: 50px;
-            background: #222;
-            border-radius: 8px;
-            object-fit: cover;
-        }
-        .privacy-option {
-            background: #141414;
-            padding: 12px;
-            border-radius: 14px;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            cursor: pointer;
-            border: 1px solid transparent;
-        }
-        .privacy-option.selected {
-            border-color: var(--cobalt);
-            background: rgba(59,130,246,0.1);
-        }
-        #cinema {
-            position: fixed;
-            inset: 0;
-            background: #000;
-            z-index: 200;
-            display: flex;
-            flex-direction: column;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.4s;
-        }
-        #cinema.active { opacity: 1; pointer-events: auto; }
-        .video-area {
-            flex: 1;
-            background: black;
-            position: relative;
-        }
-        .video-area iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-        .cinema-overlay {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0,0,0,0.8);
-            z-index: 5;
-        }
-        .countdown {
-            font-size: 3rem;
-            font-weight: 800;
-            color: var(--cobalt);
-            font-family: monospace;
-        }
-        .chat-area {
-            height: 200px;
-            background: #0a0a0a;
-            display: flex;
-            flex-direction: column;
-            border-top: 1px solid #222;
+        .nav-arrow:hover { background: var(--cobalt); border-color: var(--cobalt); }
+        .nav-arrow.left { left: 8px; }
+        .nav-arrow.right { right: 8px; }
+
+        /* Loket Column */
+        .loket-column {
+            min-width: 88vw; height: 100%;
+            scroll-snap-align: start;
+            display: flex; flex-direction: column;
+            border-right: 1px solid var(--border);
+            background: var(--bg2);
             flex-shrink: 0;
         }
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 10px;
-            font-size: 0.8rem;
+        .loket-header {
+            padding: 10px 14px; font-size: 0.75rem; font-weight: 700;
+            color: var(--cobalt); border-bottom: 1px solid var(--border);
+            font-family: 'JetBrains Mono', monospace; letter-spacing: 1px;
+            text-transform: uppercase; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: space-between;
         }
-        .chat-input-row {
-            display: flex;
-            padding: 10px;
-            gap: 8px;
-            border-top: 1px solid #222;
-            background: #050505;
+        .loket-header .loket-count { color: var(--muted); font-weight: 400; }
+
+        /* Pintu Grid — 2 baris × 10 kolom */
+        .pintu-container {
+            flex: 1; overflow-y: auto; padding: 12px;
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-auto-rows: 56px;
+            gap: 7px;
+            align-content: start;
         }
-        .chat-input-row input {
-            flex: 1;
-            background: #1a1a1a;
-            border: none;
-            padding: 12px;
-            border-radius: 25px;
-            color: white;
-            font-size: 0.9rem;
+        .pintu-container::-webkit-scrollbar { width: 3px; }
+        .pintu-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+        .pintu-item {
+            background: var(--bg3); border: 1px solid var(--border);
+            border-radius: 8px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s; position: relative;
+            user-select: none;
         }
-        .chat-send {
-            background: var(--cobalt);
-            border: none;
-            border-radius: 25px;
-            padding: 0 18px;
-            color: white;
-            font-weight: 600;
+        .pintu-item:active { transform: scale(0.93); }
+        .pintu-item:hover { border-color: var(--cobalt); background: rgba(59,130,246,0.08); }
+        .pintu-item.occupied {
+            border-color: var(--gold);
+            background: rgba(245,158,11,0.12);
+            box-shadow: 0 0 10px rgba(245,158,11,0.15);
         }
-        .cinema-header-badge {
-            position: absolute;
-            top: 12px;
-            left: 12px;
-            background: rgba(0,0,0,0.6);
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            z-index: 10;
+        .pintu-number {
+            font-size: 0.72rem; font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
         }
-        .exit-btn {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            background: rgba(255,0,0,0.6);
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            z-index: 10;
-            cursor: pointer;
+        .pintu-dot {
+            width: 5px; height: 5px; border-radius: 50%;
+            background: var(--muted); margin-top: 3px;
+            transition: background 0.2s;
         }
-        .ticket-badge {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: linear-gradient(135deg, var(--gold), #f59e0b);
-            color: black;
-            padding: 12px 18px;
-            border-radius: 30px;
-            font-weight: 700;
-            z-index: 150;
-            transform: translateX(120%);
-            transition: transform 0.3s cubic-bezier(0.34, 1.2, 0.64, 1);
-            font-size: 0.8rem;
+        .pintu-item.occupied .pintu-dot { background: var(--gold); }
+
+        /* ─── CREATE ROOM VIEW ─── */
+        #create-room-view {
+            position: fixed; inset: 0; z-index: 50; background: var(--bg);
+            transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+            overflow-y: auto; padding: 16px;
+            padding-bottom: calc(env(safe-area-inset-bottom) + 20px);
         }
-        .ticket-badge.active { transform: translateX(0); }
-        .rules-modal {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.9);
-            z-index: 500;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: 0.2s;
+        #create-room-view.active { transform: translateX(0); }
+
+        .view-header {
+            display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-top: 8px;
         }
-        .rules-modal.open { opacity: 1; pointer-events: auto; }
-        .rules-card {
-            background: #121212;
-            width: 85%;
-            max-width: 320px;
-            padding: 24px;
-            border-radius: 24px;
+        .view-header h2 { font-size: 1.1rem; font-weight: 700; color: var(--cobalt); }
+
+        .form-group { margin-bottom: 16px; }
+        .form-label {
+            display: block; margin-bottom: 7px; font-size: 0.78rem;
+            color: var(--muted); font-weight: 600; letter-spacing: 0.3px;
         }
-        @media (max-width: 600px) {
-            .pintu-grid { gap: 8px; }
-            .pintu-item { padding: 8px 2px; }
+        .form-input, .form-select {
+            width: 100%; padding: 12px 14px;
+            background: var(--bg3); border: 1px solid var(--border);
+            border-radius: 10px; color: var(--text); font-family: inherit;
+            font-size: 0.85rem; outline: none;
+            transition: border-color 0.2s;
+            -webkit-appearance: none;
         }
-        .printer-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.95);
-            z-index: 300;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+        .form-input:focus, .form-select:focus { border-color: var(--cobalt); }
+        .form-select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b6b80'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+
+        /* Verify button */
+        .verify-btn {
+            width: 100%; padding: 12px; margin-top: 8px;
+            background: linear-gradient(135deg, var(--cobalt2), var(--cobalt));
+            color: #fff; border: none; border-radius: 10px; font-weight: 700;
+            cursor: pointer; font-family: inherit; font-size: 0.85rem;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            transition: opacity 0.2s, transform 0.15s;
         }
-        .printer-overlay.active { display: flex; }
+        .verify-btn:active { transform: scale(0.98); }
+        .verify-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .mini-spin {
+            width: 16px; height: 16px; border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff;
+            animation: spin 0.7s linear infinite;
+        }
+
+        /* Cache badge */
+        .cache-pill {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 3px 8px; border-radius: 99px; font-size: 0.68rem;
+            font-weight: 700; font-family: 'JetBrains Mono', monospace;
+            margin-left: 8px; vertical-align: middle;
+        }
+        .cache-pill.cached { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+        .cache-pill.new { background: rgba(59,130,246,0.1); color: var(--cobalt); border: 1px solid var(--border2); }
+
+        /* Video info display */
+        #video-info-display {
+            background: linear-gradient(135deg, rgba(29,78,216,0.15) 0%, rgba(139,92,246,0.1) 100%);
+            border: 1px solid var(--border2); border-radius: 12px;
+            padding: 14px; margin-bottom: 16px; display: none;
+        }
+        #video-info-display.active { display: flex; gap: 12px; align-items: flex-start; }
+        .vid-thumb { width: 100px; height: 70px; border-radius: 8px; object-fit: cover; background: var(--bg3); flex-shrink: 0; }
+        .vid-meta-title { font-size: 0.85rem; font-weight: 700; color: var(--cyan); margin-bottom: 4px; line-height: 1.3; }
+        .vid-meta-row { font-size: 0.72rem; color: var(--muted); margin-bottom: 2px; }
+        .vid-meta-row span { color: var(--cobalt); font-weight: 600; }
+
+        /* Privacy options */
+        .privacy-options { margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px; }
+        .privacy-option {
+            display: flex; align-items: flex-start; gap: 12px; padding: 12px;
+            background: var(--bg3); border: 2px solid var(--border);
+            border-radius: 10px; cursor: pointer; transition: all 0.2s;
+        }
+        .privacy-option:hover { border-color: rgba(59,130,246,0.4); }
+        .privacy-option.selected { border-color: var(--cobalt); background: rgba(59,130,246,0.08); }
+        .privacy-option input[type="radio"] { margin-top: 2px; accent-color: var(--cobalt); flex-shrink: 0; }
+        .privacy-option-title { font-size: 0.85rem; font-weight: 700; display: block; }
+        .privacy-option-desc { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+        #access-code-container { display: none; margin-top: 10px; }
+        #access-code-container.active { display: block; }
+        .code-input { text-align: center; font-size: 1.3rem; letter-spacing: 8px; font-family: 'JetBrains Mono', monospace; }
+
+        /* Quota preview */
+        .quota-preview {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 14px; background: var(--bg3); border: 1px solid var(--border);
+            border-radius: 10px; margin-bottom: 16px;
+        }
+        .quota-label { font-size: 0.78rem; color: var(--muted); }
+        .quota-value { font-size: 1.1rem; font-weight: 700; color: var(--cobalt); font-family: 'JetBrains Mono', monospace; }
+
+        /* ─── PRINTER ANIMATION ─── */
+        #printer-overlay {
+            position: fixed; inset: 0; background: rgba(6,6,10,0.97);
+            z-index: 100; display: none; flex-direction: column;
+            align-items: center; justify-content: center;
+        }
+        #printer-overlay.active { display: flex; }
         .printer-body {
-            width: 280px;
-            height: 40px;
-            background: #333;
-            border-radius: 4px;
+            width: 240px; height: 36px; background: var(--bg3);
+            border-radius: 6px 6px 0 0; border: 1px solid var(--border);
+            position: relative; z-index: 2;
         }
         .printer-slot {
-            width: 240px;
-            height: 10px;
-            background: #000;
-            margin-top: 5px;
+            width: 180px; height: 8px; background: var(--bg);
+            margin: 0 auto; position: relative; top: 28px; z-index: 1; border-radius: 2px;
         }
+        .ticket-stack-wrap { position: relative; width: 220px; height: 320px; overflow: hidden; margin-top: 0; }
         .ticket-paper {
-            background: white;
-            color: black;
-            padding: 15px;
-            border-radius: 8px;
+            width: 200px; background: #fafafa; color: #111;
+            padding: 14px; border-radius: 0 0 8px 8px;
+            font-family: 'JetBrains Mono', monospace; text-align: center;
+            font-size: 0.75rem; position: absolute;
+            top: 0; left: 10px; opacity: 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .ticket-paper h3 { font-size: 0.9rem; margin-bottom: 4px; }
+        @keyframes printOut { 0% { top: 0; opacity: 1; } 100% { top: 280px; opacity: 0.7; } }
+        .printer-status { color: var(--muted); font-size: 0.8rem; margin-top: 20px; font-family: 'JetBrains Mono', monospace; }
+
+        /* ─── TICKET BADGE ─── */
+        #ticket-badge {
+            position: fixed; bottom: 20px; right: 16px; z-index: 90;
+            background: linear-gradient(135deg, var(--gold) 0%, #fbbf24 100%);
+            color: #000; padding: 12px 16px; border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(245,158,11,0.4);
+            transform: translateY(100px); transition: transform 0.4s cubic-bezier(0.68,-0.55,0.265,1.55);
+            font-weight: 700; min-width: 180px;
+        }
+        #ticket-badge.active { transform: translateY(0); }
+        .ticket-badge-label { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.6; margin-bottom: 3px; }
+        .ticket-badge-val { font-size: 0.95rem; font-family: 'JetBrains Mono', monospace; }
+        .ticket-badge-x { position: absolute; top: 6px; right: 10px; cursor: pointer; opacity: 0.4; font-size: 1.1rem; }
+        .ticket-badge-x:hover { opacity: 1; }
+
+        /* ─── CINEMA VIEW ─── */
+        #cinema-view {
+            position: fixed; inset: 0; z-index: 80;
+            background: #fff; display: flex; flex-direction: column;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.4s, background-color 2.5s;
+        }
+        #cinema-view.active { opacity: 1; pointer-events: auto; }
+        #cinema-view.lights-off { background: #000; }
+
+        .cinema-video-area {
+            flex: 1; min-height: 0; position: relative;
+            background: #000; display: flex; align-items: center; justify-content: center;
+        }
+
+        /* HUD badges */
+        .hud-badge {
+            position: absolute; z-index: 20; pointer-events: auto;
+            background: rgba(0,0,0,0.6); color: #fff;
+            padding: 6px 10px; border-radius: 7px; font-size: 0.72rem;
+            backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .hud-tl { top: 10px; left: 10px; }
+        .hud-tr { top: 10px; right: 10px; background: rgba(220,38,38,0.7); cursor: pointer; border-color: rgba(220,38,38,0.3); }
+        .hud-tr:hover { background: rgba(220,38,38,0.9); }
+
+        /* Waiting overlay */
+        #cinema-overlay-ui {
+            position: absolute; inset: 0; z-index: 10; pointer-events: none;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
             text-align: center;
-            margin-top: 20px;
-            min-width: 220px;
+        }
+        .countdown-num {
+            font-size: 3.5rem; font-weight: 700; color: var(--accent);
+            font-family: 'JetBrains Mono', monospace; line-height: 1;
+        }
+        .waiting-label { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 3px; margin-top: 8px; }
+        #play-btn-cinema { pointer-events: auto; margin-top: 16px; display: none; }
+
+        /* Players */
+        .player-wrap { position: absolute; inset: 0; z-index: 5; }
+        #native-player { width: 100%; height: 100%; display: none; background: #000; }
+        #native-player.active { display: block; }
+        #native-player video { width: 100%; height: 100%; object-fit: contain; }
+        #yt-player-wrapper { position: absolute; inset: 0; z-index: 5; }
+        #yt-player-wrapper.hidden { display: none; }
+        #player { width: 100%; height: 100%; }
+
+        /* Chat */
+        .cinema-chat {
+            height: 185px; min-height: 150px; max-height: 40vh;
+            background: #f4f4f5; border-top: 1px solid #e0e0e0;
+            display: flex; flex-direction: column; flex-shrink: 0;
+            transition: background 2.5s, border-color 2.5s;
+        }
+        #cinema-view.lights-off .cinema-chat { background: #0a0a0e; border-top-color: var(--border); }
+
+        .chat-messages {
+            flex: 1; overflow-y: auto; padding: 10px 12px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .chat-messages::-webkit-scrollbar { width: 3px; }
+        .chat-messages::-webkit-scrollbar-thumb { background: #ddd; border-radius: 99px; }
+        #cinema-view.lights-off .chat-messages::-webkit-scrollbar-thumb { background: var(--border); }
+
+        .chat-msg {
+            display: inline-block; max-width: 85%; padding: 6px 10px;
+            background: #e5e5ea; color: #111; border-radius: 8px;
+            margin-bottom: 5px; font-size: 0.8rem; word-break: break-word;
+            transition: background 2.5s, color 2.5s; line-height: 1.4;
+        }
+        #cinema-view.lights-off .chat-msg { background: #1c1c28; color: #ddd; }
+        .chat-msg.system {
+            display: block; background: none !important; color: #999 !important;
+            font-style: italic; font-size: 0.72rem; text-align: center; margin: 6px 0;
+        }
+
+        .chat-input-row {
+            padding: 8px 12px; display: flex; gap: 8px; flex-shrink: 0;
+            background: #fff; border-top: 1px solid #e0e0e0;
+            transition: background 2.5s, border-color 2.5s;
+            padding-bottom: calc(env(safe-area-inset-bottom) + 8px);
+        }
+        #cinema-view.lights-off .chat-input-row { background: #06060a; border-top-color: var(--border); }
+
+        .chat-input-row input {
+            flex: 1; padding: 10px 14px; border-radius: 20px;
+            border: 1px solid #ddd; background: #f4f4f5; color: #111;
+            font-family: inherit; font-size: 16px; /* prevent iOS zoom */
+            outline: none; transition: all 2.5s;
+        }
+        #cinema-view.lights-off .chat-input-row input {
+            background: #1a1a28; border-color: var(--border); color: var(--text);
+        }
+        .chat-send-btn {
+            background: var(--cobalt); color: #fff; border: none;
+            padding: 10px 16px; border-radius: 20px; font-weight: 700;
+            cursor: pointer; font-family: inherit; font-size: 0.8rem;
+            transition: background 0.2s; white-space: nowrap; flex-shrink: 0;
+        }
+        .chat-send-btn:hover { background: var(--cobalt2); }
+
+        /* ─── RECONNECT OVERLAY ─── */
+        #reconnect-overlay {
+            position: fixed; inset: 0; background: rgba(6,6,10,0.97);
+            z-index: 150; display: none;
+            align-items: center; justify-content: center;
+        }
+        #reconnect-overlay.active { display: flex; }
+        .reconnect-card {
+            background: var(--bg3); border: 1px solid var(--border2);
+            border-radius: 16px; padding: 28px 24px; max-width: 340px; width: 90%;
+            text-align: center;
+        }
+        .reconnect-card h2 { color: var(--cobalt); font-size: 1.1rem; margin-bottom: 8px; }
+        .reconnect-card p { color: var(--muted); font-size: 0.82rem; margin-bottom: 20px; }
+        .reconnect-btns { display: flex; gap: 10px; }
+        .reconnect-btns .btn { flex: 1; }
+
+        /* ─── RULES MODAL ─── */
+        #rules-modal {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 200;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.25s;
+        }
+        #rules-modal.open { opacity: 1; pointer-events: auto; }
+        .rules-card {
+            background: var(--bg3); border: 1px solid var(--border);
+            border-radius: 16px; padding: 24px; max-width: 360px; width: 90%;
+        }
+        .rules-card h2 { color: var(--cobalt); font-size: 1rem; margin-bottom: 14px; }
+        .rules-list { padding-left: 18px; color: var(--muted); font-size: 0.8rem; line-height: 1.8; }
+        .rules-list li { margin-bottom: 2px; }
+        .rules-list strong { color: var(--text); }
+
+        /* ─── RESPONSIVE ─── */
+        @media (max-width: 400px) {
+            .pintu-container {
+                grid-template-columns: repeat(10, 1fr);
+                gap: 5px;
+                padding: 8px;
+            }
+            .pintu-item { border-radius: 6px; }
+            .pintu-number { font-size: 0.62rem; }
+            .pintu-dot { width: 4px; height: 4px; }
+        }
+        @media (max-height: 600px) and (orientation: landscape) {
+            .cinema-chat { height: 130px; min-height: 100px; }
+            .countdown-num { font-size: 2.5rem; }
+        }
+        @media (min-width: 600px) {
+            .loket-column { min-width: 500px; }
+            .pintu-container { grid-template-columns: repeat(10, 1fr); gap: 8px; padding: 16px; }
+            .pintu-item { min-height: 62px; }
         }
     </style>
 </head>
 <body>
-<div id="toast-container"></div>
-<div id="loading"><div class="spinner"></div><p style="margin-top: 16px;">Memproses...</p></div>
-<div id="ticket-badge" class="ticket-badge">🎟️ Loket <span id="ticket-l"></span> | Pintu <span id="ticket-p"></span></div>
 
-<div id="lobby">
-    <header>
-        <div class="logo">Th<span>MOvie</span> <span style="font-size:0.65rem;">🎬 NO ADS</span></div>
-        <div onclick="openRules()" style="cursor:pointer;">📜 Rules</div>
-    </header>
-    <div class="hero-card">
-        <div class="hero-poster"></div>
-        <div class="hero-info">
-            <div class="badge-cobalt">NO ADS • YouTube nocookie</div>
-            <h2>Watch Party</h2>
-            <p>Tanpa iklan • Private • Real-time sync</p>
-        </div>
-    </div>
-    <div class="action-buttons">
-        <button class="btn btn-primary" onclick="openCreateRoom()">🎬 BUAT ROOM</button>
-        <button class="btn btn-secondary" onclick="toastInfo('Klik pintu yang sudah terisi untuk join!')">🚪 JOIN</button>
-    </div>
-    <div class="hallway-label">← SCROLL LOKET & PILIH PINTU →</div>
-    <div class="hallway-wrapper" id="hallway-list"></div>
+<div id="toast-container"></div>
+<div id="db-stats">🎬 <span id="cached-count">0</span> Film</div>
+
+<!-- Loading -->
+<div id="loading-overlay">
+    <div class="spin-ring"></div>
+    <div class="loading-text" id="loading-text">Mengecek database...</div>
+    <div class="loading-bar"><div class="loading-bar-fill" id="progress-bar"></div></div>
 </div>
 
-<div id="create-room">
-    <button class="btn btn-secondary" style="margin-bottom: 20px;" onclick="closeCreateRoom()">← Kembali</button>
-    <h2 style="color:var(--cobalt);">Buat Ruang Nonton</h2>
-    <div class="form-group">
-        <label class="form-label">🔗 Link YouTube (Original)</label>
-        <input type="text" id="video-url" class="form-input" placeholder="https://youtube.com/watch?v=... atau https://youtu.be/...">
-        <button class="verify-btn" id="verifyBtn" onclick="processVideo()">✓ Verifikasi Video</button>
-    </div>
-    <div id="video-preview">
-        <div class="preview-row">
-            <img id="preview-img" class="preview-img" src="">
-            <div><div id="preview-title" class="preview-title">-</div><div id="preview-id" style="font-size:0.7rem;color:#aaa;">-</div></div>
+<!-- Reconnect -->
+<div id="reconnect-overlay">
+    <div class="reconnect-card">
+        <h2>🎬 Lanjutkan Menonton?</h2>
+        <p id="reconnect-info">Anda sedang menonton film sebelumnya</p>
+        <div class="reconnect-btns">
+            <button class="btn btn-cobalt" onclick="reconnectToRoom()">Lanjutkan</button>
+            <button class="btn btn-ghost" onclick="skipReconnect()">Tutup</button>
         </div>
     </div>
-    <div class="form-group">
-        <label class="form-label">📅 Jadwal Tayang</label>
-        <input type="datetime-local" id="schedule-time" class="form-input">
-    </div>
-    <div class="form-group">
-        <label class="form-label">🔒 Privasi</label>
-        <div id="privacy-public" class="privacy-option selected" onclick="setPrivacy('public')">
-            <span>🌍 Public</span><span style="font-size:0.7rem;color:#aaa;">Semua bisa lihat</span>
+</div>
+
+<!-- Ticket Badge -->
+<div id="ticket-badge">
+    <span class="ticket-badge-x" onclick="hideTicketBadge()">×</span>
+    <div class="ticket-badge-label">Tiket Anda</div>
+    <div class="ticket-badge-val">Loket <span id="ticket-loket">-</span> · Pintu <span id="ticket-pintu">-</span></div>
+</div>
+
+<!-- ═══ LOBBY VIEW ═══ -->
+<div id="lobby-view">
+    <header>
+        <div class="logo">Th<span class="m">M</span>Ovie<span class="tag">AD-FREE</span></div>
+        <div class="rules-trigger" onclick="toggleRules(true)">Rules</div>
+    </header>
+
+    <div class="hero">
+        <div class="hero-card">
+            <div class="hero-poster">🎬</div>
+            <div class="hero-info">
+                <h2>ThMOvie Watch Party</h2>
+                <p>No Ads · Cobalt Powered · HD Quality</p>
+            </div>
+            <div class="hero-badge">COBALT</div>
         </div>
-        <div id="privacy-private" class="privacy-option" onclick="setPrivacy('private')">
-            <span>🔒 Private</span><span style="font-size:0.7rem;color:#aaa;">Kode 4 digit</span>
-        </div>
-        <input type="text" id="access-code" class="form-input" placeholder="Kode akses 4 digit" maxlength="4" style="margin-top:10px; display:none;">
     </div>
+
+    <div class="booking-actions">
+        <button class="btn btn-cobalt" onclick="openCreateRoom()">🎬 Buat Room</button>
+        <button class="btn btn-ghost" onclick="showToast('Pilih Pintu yang TERISI (kuning) untuk join!','cobalt')">🚪 Join Room</button>
+    </div>
+
+    <div class="hallway-label">← Geser Loket  ↕ Scroll Pintu →</div>
+
+    <div class="hallway-wrapper">
+        <div class="nav-arrow left" onclick="scrollHallway(-1)">&#10094;</div>
+        <div class="hallway-container" id="hallway"></div>
+        <div class="nav-arrow right" onclick="scrollHallway(1)">&#10095;</div>
+    </div>
+</div>
+
+<!-- ═══ CREATE ROOM VIEW ═══ -->
+<div id="create-room-view">
+    <div class="view-header">
+        <button class="btn btn-ghost" onclick="closeCreateRoom()">← Kembali</button>
+        <h2>Buat Ruang Nonton</h2>
+    </div>
+
     <div class="form-group">
-        <label class="form-label">🎫 Kapasitas</label>
-        <select id="tier-select" class="form-select">
-            <option value="free">Free (1-57 kursi)</option>
-            <option value="premium">Premium (100-200 kursi)</option>
-            <option value="vip">VIP (200-300 kursi)</option>
+        <label class="form-label">
+            Link Video YouTube
+            <span class="cache-pill new" id="cache-status">NEW</span>
+        </label>
+        <input type="text" id="room-video-url" class="form-input"
+               placeholder="https://youtube.com/watch?v=..." onblur="checkVideoCache()">
+        <button class="verify-btn" id="verify-btn" onclick="verifyAndProcessVideo()">
+            <span id="verify-text">Verifikasi &amp; Cek Database</span>
+            <div class="mini-spin hidden" id="verify-spinner"></div>
+        </button>
+    </div>
+
+    <div id="video-info-display">
+        <img id="video-thumbnail" class="vid-thumb" src="" alt="thumb">
+        <div>
+            <div class="vid-meta-title" id="video-title">-</div>
+            <div class="vid-meta-row">Channel: <span id="video-channel">-</span></div>
+            <div class="vid-meta-row">Status: <span id="video-cache-info">-</span></div>
+            <div class="vid-meta-row">ID: <span id="video-id-display">-</span></div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">Waktu Tayang</label>
+        <input type="datetime-local" id="room-time" class="form-input">
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">Privasi Room</label>
+        <div class="privacy-options">
+            <div class="privacy-option selected" onclick="selectPrivacy('public')">
+                <input type="radio" name="privacy" value="public" checked>
+                <div>
+                    <span class="privacy-option-title">🌐 Public</span>
+                    <span class="privacy-option-desc">Semua orang bisa join</span>
+                </div>
+            </div>
+            <div class="privacy-option" onclick="selectPrivacy('private')">
+                <input type="radio" name="privacy" value="private">
+                <div>
+                    <span class="privacy-option-title">🔒 Private</span>
+                    <span class="privacy-option-desc">Butuh kode akses 4 digit</span>
+                </div>
+            </div>
+        </div>
+        <div id="access-code-container">
+            <label class="form-label">Kode Akses (4 digit)</label>
+            <input type="text" id="access-code" class="form-input code-input"
+                   maxlength="4" placeholder="0000"
+                   oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,4)">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">Tipe Akun</label>
+        <select id="room-tier" class="form-select">
+            <option value="free">Gratis (Maks 57)</option>
+            <option value="year_10k">Langganan 10rb/Thn (100–142)</option>
+            <option value="month_10k">Langganan 10rb/Bln (100–160)</option>
+            <option value="year_20k">Langganan 20rb/Thn (166–198)</option>
+            <option value="month_20k">Langganan 20rb/Bln (166–200)</option>
+            <option value="month_30k">VIP 30rb/Bln (200–300)</option>
         </select>
     </div>
-    <button class="btn btn-primary" style="width:100%; margin-top:20px;" onclick="createRoomNow()">🎟️ BOOKING & BUAT ROOM</button>
+
+    <div class="quota-preview">
+        <span class="quota-label">Estimasi Kapasitas</span>
+        <span class="quota-value" id="quota-preview">0</span>
+    </div>
+
+    <button class="btn btn-cobalt btn-full" style="margin-top: 4px; padding: 14px;" onclick="processBooking()">
+        BOOKING SEKARANG
+    </button>
 </div>
 
-<div id="cinema">
-    <div class="cinema-header-badge" id="cinema-location">Loket - | Pintu -</div>
-    <div class="exit-btn" onclick="exitCinema()">✕ KELUAR</div>
-    <div class="video-area">
-        <iframe id="youtube-player" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-        <div id="cinema-overlay" class="cinema-overlay">
-            <div class="countdown" id="countdown-text">--:--</div>
-            <div style="font-size:0.8rem;">Menunggu Waktu Tayang</div>
-        </div>
-    </div>
-    <div class="chat-area">
-        <div class="chat-messages" id="chat-messages"></div>
-        <div class="chat-input-row">
-            <input type="text" id="chat-input" placeholder="Ketik pesan..." onkeypress="if(event.key==='Enter') sendChat()">
-            <button class="chat-send" onclick="sendChat()">Kirim</button>
-        </div>
-    </div>
-</div>
-
-<div id="printer-overlay" class="printer-overlay">
+<!-- ═══ PRINTER OVERLAY ═══ -->
+<div id="printer-overlay">
     <div class="printer-body"></div>
     <div class="printer-slot"></div>
-    <div id="ticket-stack"></div>
-    <div class="printer-status" style="color:white; margin-top:20px;">Mencetak Tiket...</div>
+    <div class="ticket-stack-wrap" id="ticket-stack"></div>
+    <div class="printer-status" id="printer-status">Mencetak Tiket...</div>
 </div>
 
-<div class="rules-modal" id="rules-modal">
-    <div class="rules-card">
-        <h3 style="color:var(--cobalt);">🎬 Aturan ThMOvie</h3>
-        <ul style="margin-top:10px;font-size:0.8rem;">
-            <li>✅ Video via YouTube nocookie → Bebas Iklan!</li>
-            <li>🔒 Private room pakai kode akses</li>
-            <li>💬 Jaga sopan santun di chat</li>
-            <li>🚀 Auto delete setelah 24 jam</li>
-        </ul>
-        <button class="btn btn-primary" style="width:100%;margin-top:16px;" onclick="closeRules()">Oke, Mengerti</button>
+<!-- ═══ CINEMA VIEW ═══ -->
+<div id="cinema-view">
+    <div class="cinema-video-area">
+        <div class="hud-badge hud-tl">Loket <span id="cinema-loket">?</span> · Pintu <span id="cinema-pintu">?</span></div>
+        <div class="hud-badge hud-tr" onclick="exitCinema()">✕ KELUAR</div>
+
+        <div id="cinema-overlay-ui">
+            <div class="countdown-num" id="countdown-timer">--:--</div>
+            <div class="waiting-label">Menunggu Waktu Tayang</div>
+            <button class="btn btn-cobalt" id="play-btn-cinema" onclick="requestUserInteraction()">▶ Klik untuk Play</button>
+        </div>
+
+        <div id="native-player" class="player-wrap">
+            <video id="video-element" controls playsinline webkit-playsinline></video>
+        </div>
+        <div id="yt-player-wrapper" class="player-wrap hidden">
+            <div id="player"></div>
+        </div>
+    </div>
+
+    <div class="cinema-chat">
+        <div class="chat-messages" id="chat-box"></div>
+        <div class="chat-input-row">
+            <input type="text" id="chat-msg" placeholder="Ketik pesan..." onkeypress="handleChat(event)">
+            <button class="chat-send-btn" onclick="sendChatMessage()">Kirim</button>
+        </div>
     </div>
 </div>
 
+<!-- ═══ RULES MODAL ═══ -->
+<div id="rules-modal" onclick="toggleRules(false)">
+    <div class="rules-card" onclick="event.stopPropagation()">
+        <h2>🛡️ Rules ThMOvie [AD-FREE]</h2>
+        <ul class="rules-list">
+            <li><strong>NO ADS:</strong> Semua video via cobalt.tools (no YouTube ads)</li>
+            <li>Sopan di dalam chat room</li>
+            <li>Room otomatis hapus 48 jam setelah dibuat</li>
+            <li>Jangan share link sensitif / berbahaya</li>
+            <li>Kapasitas bergantung Tier yang dipilih</li>
+            <li>Video play otomatis sesuai jadwal</li>
+            <li>Film ter-cache = load lebih cepat</li>
+            <li>20 Pintu per Loket (2 baris × 10)</li>
+        </ul>
+        <button class="btn btn-cobalt btn-full" style="margin-top: 18px;" onclick="toggleRules(false)">Saya Mengerti</button>
+    </div>
+</div>
+
+<!-- YouTube IFrame API (only for intro) -->
+<script src="https://www.youtube.com/iframe_api"></script>
+
 <script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyAumySmaAi8oHFnTu8QDtp_u_dZmoHlQd8",
-        authDomain: "thmovie-3646f.firebaseapp.com",
-        databaseURL: "https://thmovie-3646f-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "thmovie-3646f",
-        storageBucket: "thmovie-3646f.appspot.com",
-    };
+// ─── FIREBASE CONFIG ───
+const firebaseConfig = {
+    apiKey: "AIzaSyAumySmaAi8oHFnTu8QDtp_u_dZmoHlQd8",
+    authDomain: "thmovie-3646f.firebaseapp.com",
+    databaseURL: "https://thmovie-3646f-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "thmovie-3646f",
+    storageBucket: "thmovie-3646f.appspot.com",
+    messagingSenderId: "1041137356432",
+    appId: "1:1041137356432:web:96edbe3402937c82f09215"
+};
+
+let db, storage;
+try {
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    db = firebase.database();
+    storage = firebase.storage();
+} catch (e) {
+    console.error("Firebase init error:", e);
+}
 
-    let currentRoomId = null, currentRoomRef = null, currentRoomData = null;
-    let iframePlayer = document.getElementById('youtube-player');
-    let countdownInterval = null;
-    let verifiedVideoId = null, verifiedVideoTitle = null;
-    let privacyMode = 'public';
-    let myUsername = "User_" + Math.floor(Math.random() * 9999);
+// ─── CONSTANTS ───
+const INTRO_VIDEO_ID = "9v1atEBmUIc";
+const INTRO_DURATION_SEC = 15;
+const COBALT_API = "https://api.cobalt.tools/api/json";
+const SESSION_KEY = 'thmovie_session_v2';
+const LOKETS = 6;
+const PINTU_PER_LOKET = 20; // 2 rows × 10
 
-    function toast(msg) { 
-        let c = document.getElementById('toast-container'); 
-        let d = document.createElement('div'); 
-        d.className = 'toast'; 
-        d.innerText = msg; 
-        c.appendChild(d); 
-        setTimeout(() => d.remove(), 2800); 
+// ─── STATE ───
+let currentRoomId = null, roomData = null, dbRoomRef = null;
+let player = null;
+let myUsername = "User_" + Math.floor(Math.random() * 9000 + 1000);
+let currentVideoPhase = null;
+let countdownInterval = null;
+let verifiedVideoData = null;
+let currentPrivacy = 'public';
+let isUsingNativePlayer = false;
+let userInteracted = false;
+let sessionSaveInterval = null;
+let ytPlayerReady = false;
+
+// ─── SESSION ───
+function saveSession() {
+    if (!currentRoomId || !roomData) return;
+    const data = {
+        roomId: currentRoomId,
+        loket: roomData.loket, pintu: roomData.pintu,
+        currentTime: isUsingNativePlayer ? (document.getElementById('video-element').currentTime || 0) : 0,
+        timestamp: Date.now()
+    };
+    try { localStorage.setItem(SESSION_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function loadSession() {
+    try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch(e) { return null; }
+}
+function clearSession() {
+    localStorage.removeItem(SESSION_KEY);
+    if (sessionSaveInterval) { clearInterval(sessionSaveInterval); sessionSaveInterval = null; }
+}
+function checkForReconnect() {
+    const s = loadSession();
+    if (s && s.roomId && (Date.now() - s.timestamp) < 7200000) {
+        document.getElementById('reconnect-info').textContent =
+            `Anda di Loket ${s.loket} Pintu ${s.pintu}`;
+        document.getElementById('reconnect-overlay').classList.add('active');
+        return true;
     }
-    function toastInfo(msg) { toast(msg); }
-    function showLoading(show, text = 'Memproses...') { 
-        let ld = document.getElementById('loading'); 
-        if (show) { 
-            document.querySelector('#loading p').innerText = text; 
-            ld.classList.add('active');
-        } else { 
-            ld.classList.remove('active');
+    clearSession(); return false;
+}
+async function reconnectToRoom() {
+    const s = loadSession();
+    if (!s || !s.roomId) { skipReconnect(); return; }
+    document.getElementById('reconnect-overlay').classList.remove('active');
+    showLoading('Menghubungkan kembali...', 40);
+    try {
+        const snap = await db.ref('rooms/' + s.roomId).once('value');
+        const room = snap.val();
+        if (room) {
+            const elapsed = Math.floor((Date.now() - s.timestamp) / 1000);
+            await enterCinema(s.roomId, room, (s.currentTime || 0) + elapsed);
+            showToast('Berhasil reconnect!', 'success');
+        } else {
+            showToast('Room sudah tidak ada', 'error');
+            clearSession();
         }
-    }
+    } catch(e) {
+        showToast('Gagal reconnect: ' + e.message, 'error');
+        clearSession();
+    } finally { hideLoading(); }
+}
+function skipReconnect() {
+    document.getElementById('reconnect-overlay').classList.remove('active');
+    clearSession();
+}
 
-    // Build Hallway: 6 loket, each 20 doors (5x4 grid = 20 pintu per loket)
-    function buildHallway() {
-        const container = document.getElementById('hallway-list');
-        container.innerHTML = '';
-        for (let l = 1; l <= 6; l++) {
-            const loketDiv = document.createElement('div');
-            loketDiv.className = 'loket-container';
-            loketDiv.innerHTML = `<div class="loket-header">🎞️ LOKET ${l}</div><div class="pintu-grid" id="grid-${l}"></div>`;
-            container.appendChild(loketDiv);
-            const grid = document.getElementById(`grid-${l}`);
-            const startNum = (l - 1) * 20 + 1;
-            for (let i = 0; i < 20; i++) {
-                const pintuNum = startNum + i;
-                const doorDiv = document.createElement('div');
-                doorDiv.className = 'pintu-item';
-                doorDiv.setAttribute('data-loket', l);
-                doorDiv.setAttribute('data-pintu', pintuNum);
-                doorDiv.innerHTML = `<div class="pintu-number">${pintuNum}</div><div class="pintu-status">KOSONG</div>`;
-                doorDiv.onclick = () => tryJoinRoom(l, pintuNum);
-                grid.appendChild(doorDiv);
-            }
-        }
-        listenRoomOccupancy();
-    }
-
-    function listenRoomOccupancy() {
-        db.ref('rooms').on('value', (snap) => {
-            const rooms = snap.val() || {};
-            document.querySelectorAll('.pintu-item').forEach(el => {
-                el.classList.remove('occupied');
-                el.querySelector('.pintu-status').innerText = 'KOSONG';
-            });
-            Object.values(rooms).forEach(room => {
-                if (room.loket && room.pintu) {
-                    const el = document.querySelector(`.pintu-item[data-loket="${room.loket}"][data-pintu="${room.pintu}"]`);
-                    if (el) {
-                        el.classList.add('occupied');
-                        el.querySelector('.pintu-status').innerText = 'TERISI';
-                    }
-                }
-            });
+// ─── INIT ───
+window.onload = function() {
+    generateHallway();
+    updateQuotaPreview();
+    setupDateTimeMin();
+    updateCachedMovieCount();
+    if (db) {
+        db.ref('.info/connected').on('value', snap => {
+            if (snap.val()) console.log('[TMO] Firebase connected');
         });
     }
+    setTimeout(checkForReconnect, 600);
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) saveSession();
+        else if (currentRoomId && currentVideoPhase === 'main') syncVideoWithServer();
+    });
+    window.addEventListener('beforeunload', saveSession);
+    document.getElementById('room-tier').addEventListener('change', updateQuotaPreview);
+};
 
-    async function tryJoinRoom(loket, pintu) {
-        showLoading(true, 'Cek ketersediaan...');
-        try {
-            const snapshot = await db.ref('rooms').orderByChild('loket').equalTo(loket).once('value');
-            let targetRoom = null, roomId = null;
-            snapshot.forEach(snap => {
-                const r = snap.val();
-                if (r.pintu === pintu) { targetRoom = r; roomId = snap.key; }
-            });
-            if (!targetRoom) { toast(`Loket ${loket} Pintu ${pintu} kosong`); showLoading(false); return; }
-            if (targetRoom.privacy === 'private') {
-                let code = prompt('Masukkan kode akses 4 digit:');
-                if (code !== targetRoom.accessCode) { toast('Kode akses salah!'); showLoading(false); return; }
-            }
-            await enterRoom(roomId, targetRoom);
-        } catch (e) { toast('Gagal join'); } finally { showLoading(false); }
-    }
+function onYouTubeIframeAPIReady() { ytPlayerReady = true; }
 
-    // Extract video ID from any YouTube URL format
-    function extractVideoId(url) {
-        if (!url) return null;
-        let id = null;
-        if (url.includes('youtu.be/')) id = url.split('youtu.be/')[1]?.split('?')[0];
-        else if (url.includes('v=')) id = url.split('v=')[1]?.split('&')[0];
-        else if (url.includes('/embed/')) id = url.split('/embed/')[1]?.split('?')[0];
-        else if (url.includes('youtube.com/shorts/')) id = url.split('/shorts/')[1]?.split('?')[0];
-        if (id && id.length === 11) return id;
-        return null;
-    }
+// ─── UI HELPERS ───
+function showToast(msg, type = 'default') {
+    const c = document.getElementById('toast-container');
+    const el = document.createElement('div');
+    el.className = 'toast' + (type !== 'default' ? ' ' + type : '');
+    el.textContent = msg;
+    c.appendChild(el);
+    setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 320); }, 3200);
+}
+function showLoading(text, prog = 0) {
+    document.getElementById('loading-text').textContent = text;
+    document.getElementById('progress-bar').style.width = prog + '%';
+    document.getElementById('loading-overlay').classList.add('active');
+}
+function hideLoading() {
+    document.getElementById('loading-overlay').classList.remove('active');
+    document.getElementById('progress-bar').style.width = '0%';
+}
+function toggleRules(show) { document.getElementById('rules-modal').classList.toggle('open', show); }
+function openCreateRoom() { document.getElementById('create-room-view').classList.add('active'); }
+function closeCreateRoom() {
+    document.getElementById('create-room-view').classList.remove('active');
+    document.getElementById('room-video-url').value = '';
+    document.getElementById('video-info-display').classList.remove('active');
+    document.getElementById('cache-status').className = 'cache-pill new';
+    document.getElementById('cache-status').textContent = 'NEW';
+    verifiedVideoData = null;
+    selectPrivacy('public');
+}
+function scrollHallway(dir) {
+    const h = document.getElementById('hallway');
+    h.scrollBy({ left: h.clientWidth * dir, behavior: 'smooth' });
+}
+function requestUserInteraction() {
+    userInteracted = true;
+    document.getElementById('play-btn-cinema').style.display = 'none';
+    const vid = document.getElementById('video-element');
+    if (isUsingNativePlayer && vid.paused) vid.play().catch(() => {});
+}
 
-    // Convert to YouTube nocookie embed URL (NO ADS!)
-    function getNocookieEmbedUrl(videoId, autoplay = 0) {
-        return `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=${autoplay}&controls=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=0&origin=${encodeURIComponent(window.location.origin)}`;
-    }
+// ─── VIDEO HELPERS ───
+function extractVideoID(url) {
+    if (!url) return null;
+    const m = url.match(/(?:youtu\.be\/|v\/|watch\?v=|&v=|embed\/)([A-Za-z0-9_-]{11})/);
+    return m ? m[1] : null;
+}
 
-    async function processVideo() {
-        const urlInput = document.getElementById('video-url').value.trim();
-        const videoId = extractVideoId(urlInput);
-        if (!videoId) {
-            toast('URL YouTube tidak valid! Masukkan link seperti: https://youtube.com/watch?v=...');
+// ─── COBALT INTEGRATION (no YouTube fallback with ads) ───
+async function checkVideoCache() {
+    const url = document.getElementById('room-video-url').value.trim();
+    const vid = extractVideoID(url);
+    if (!vid) return;
+    const pill = document.getElementById('cache-status');
+    pill.textContent = '...';
+    try {
+        const snap = await db.ref('video_cache/' + vid).once('value');
+        const cached = snap.val();
+        if (cached && cached.downloadUrl) {
+            pill.className = 'cache-pill cached'; pill.textContent = 'CACHED ✓';
+            return true;
+        } else {
+            pill.className = 'cache-pill new'; pill.textContent = 'NEW';
+            return false;
+        }
+    } catch(e) { return false; }
+}
+
+async function verifyAndProcessVideo() {
+    const url = document.getElementById('room-video-url').value.trim();
+    const vid = extractVideoID(url);
+    if (!vid) { showToast('URL YouTube tidak valid!', 'error'); return; }
+
+    const btn = document.getElementById('verify-btn');
+    const spin = document.getElementById('verify-spinner');
+    const txt = document.getElementById('verify-text');
+    btn.disabled = true; spin.classList.remove('hidden'); txt.textContent = 'Mengecek database...';
+
+    try {
+        // 1. Check Firebase cache
+        const snap = await db.ref('video_cache/' + vid).once('value');
+        const cached = snap.val();
+        if (cached && cached.downloadUrl) {
+            verifiedVideoData = { id: vid, title: cached.title, channel: cached.channel,
+                thumbnail: cached.thumbnail, downloadUrl: cached.downloadUrl, isCached: true };
+            updateVideoInfoUI(verifiedVideoData, true);
+            txt.textContent = '✓ Tersedia di Database';
+            showToast('Video ditemukan di database!', 'success');
             return;
         }
-        showLoading(true, 'Mengambil info video...');
+
+        // 2. Get YouTube metadata via oEmbed
+        txt.textContent = 'Mengambil metadata...';
+        const oRes = await fetch(`https://youtube.com/oembed?url=https://www.youtube.com/watch?v=${vid}&format=json`);
+        if (!oRes.ok) throw new Error('Gagal mengambil info video dari YouTube');
+        const oData = await oRes.json();
+
+        // 3. Process via cobalt.tools
+        txt.textContent = 'Memproses via cobalt.tools...';
+        showLoading('Menghubungi cobalt.tools...', 50);
+        
+        let downloadUrl = null;
         try {
-            const oembed = await fetch(`https://youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`);
-            const meta = await oembed.json();
-            verifiedVideoId = videoId;
-            verifiedVideoTitle = meta.title;
-            document.getElementById('video-preview').classList.add('active');
-            document.getElementById('preview-title').innerText = meta.title;
-            document.getElementById('preview-id').innerText = `ID: ${videoId}`;
-            document.getElementById('preview-img').src = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
-            toast('✅ Video siap! (YouTube nocookie - bebas iklan)');
-        } catch (e) {
-            toast('Gagal mengambil info video');
-            verifiedVideoId = null;
-        } finally { showLoading(false); }
-    }
+            const cobaltRes = await fetch(COBALT_API, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({
+                    url: `https://www.youtube.com/watch?v=${vid}`,
+                    isAudioOnly: false,
+                    filenamePattern: 'basic'
+                })
+            });
+            if (cobaltRes.ok) {
+                const cobaltData = await cobaltRes.json();
+                if (cobaltData.status === 'error') throw new Error(cobaltData.text || 'Cobalt gagal memproses');
+                downloadUrl = cobaltData.url || (cobaltData.picker && cobaltData.picker[0]?.url) || null;
+            } else {
+                throw new Error(`Cobalt error ${cobaltRes.status}`);
+            }
+        } catch(cobaltErr) {
+            hideLoading();
+            // COBALT FAILED: no YouTube embed fallback (would have ads)
+            // Instead: inform user and store without download URL for now
+            showToast('cobalt.tools gagal: ' + cobaltErr.message, 'error');
+            txt.textContent = 'cobalt.tools Gagal';
+            btn.disabled = false; spin.classList.add('hidden');
+            return;
+        }
 
-    function setPrivacy(type) {
-        privacyMode = type;
-        document.getElementById('privacy-public').classList.remove('selected');
-        document.getElementById('privacy-private').classList.remove('selected');
-        document.getElementById(`privacy-${type}`).classList.add('selected');
-        const codeInput = document.getElementById('access-code');
-        codeInput.style.display = type === 'private' ? 'block' : 'none';
-    }
+        hideLoading();
+        if (!downloadUrl) {
+            showToast('cobalt.tools tidak mengembalikan URL video', 'error');
+            txt.textContent = 'Gagal — Coba Lagi';
+            btn.disabled = false; spin.classList.add('hidden');
+            return;
+        }
 
-    function getCapacity() { 
-        const tier = document.getElementById('tier-select').value; 
-        if (tier === 'free') return Math.floor(Math.random() * 57) + 1; 
-        if (tier === 'premium') return Math.floor(Math.random() * 101) + 100; 
-        return Math.floor(Math.random() * 101) + 200; 
-    }
-
-    function openCreateRoom() { 
-        document.getElementById('create-room').classList.add('active'); 
-        document.getElementById('video-url').value = ''; 
-        verifiedVideoId = null; 
-        document.getElementById('video-preview').classList.remove('active'); 
-        setPrivacy('public');
-        const now = new Date();
-        now.setMinutes(now.getMinutes() + 5);
-        document.getElementById('schedule-time').min = now.toISOString().slice(0, 16);
-        document.getElementById('schedule-time').value = now.toISOString().slice(0, 16);
-    }
-    function closeCreateRoom() { document.getElementById('create-room').classList.remove('active'); }
-
-    function startPrintingAnimation(loket, pintu) {
-        const printer = document.getElementById('printer-overlay');
-        const stack = document.getElementById('ticket-stack');
-        stack.innerHTML = '';
-        printer.classList.add('active');
-        
-        const ticket = document.createElement('div');
-        ticket.className = 'ticket-paper';
-        ticket.innerHTML = `
-            <h3 style="margin:0">TMO CINEMA</h3>
-            <div style="font-size:0.8rem; margin:5px 0;">🎬 NO ADS TICKET</div>
-            <div style="font-weight:bold; font-size:1.2rem;">LOKET ${loket}</div>
-            <div style="font-weight:bold; font-size:1.2rem;">PINTU ${pintu}</div>
-            <div style="border-top:1px dashed #999; margin-top:8px; padding-top:5px; font-size:0.6rem;">
-                YouTube nocookie • Bebas Iklan<br>Watch Party
-            </div>`;
-        stack.appendChild(ticket);
-        
-        setTimeout(() => {
-            printer.classList.remove('active');
-            document.getElementById('ticket-l').innerText = loket;
-            document.getElementById('ticket-p').innerText = pintu;
-            document.getElementById('ticket-badge').classList.add('active');
-            setTimeout(() => document.getElementById('ticket-badge').classList.remove('active'), 5000);
-        }, 2000);
-    }
-
-    async function createRoomNow() {
-        if (!verifiedVideoId) { toast('Verifikasi video dulu!'); return; }
-        const schedule = document.getElementById('schedule-time').value;
-        if (!schedule) { toast('Pilih jadwal tayang'); return; }
-        const scheduleTime = new Date(schedule).getTime();
-        if (scheduleTime <= Date.now()) { toast('Jadwal harus di masa depan'); return; }
-        
-        const loket = Math.floor(Math.random() * 6) + 1;
-        const pintu = Math.floor(Math.random() * 20) + ((loket - 1) * 20) + 1;
-        const capacity = getCapacity();
-        const privacy = privacyMode;
-        const accessCode = (privacy === 'private') ? document.getElementById('access-code').value : null;
-        if (privacy === 'private' && (!accessCode || accessCode.length !== 4)) { toast('Kode akses 4 digit diperlukan'); return; }
-        
-        showLoading(true, 'Membuat ruang...');
-        const newRoom = db.ref('rooms').push();
-        const roomObj = {
-            loket, pintu, capacity, scheduleTime, privacy, accessCode,
-            videoId: verifiedVideoId, videoTitle: verifiedVideoTitle,
-            phase: 'waiting', createdAt: Date.now(), host: myUsername
+        verifiedVideoData = {
+            id: vid, title: oData.title || 'Unknown',
+            channel: oData.author_name || 'Unknown',
+            thumbnail: oData.thumbnail_url || '',
+            downloadUrl: downloadUrl, isCached: false
         };
-        await newRoom.set(roomObj);
-        showLoading(false);
-        toast(`Room berhasil! Loket ${loket} Pintu ${pintu}`);
-        closeCreateRoom();
-        startPrintingAnimation(loket, pintu);
-        await enterRoom(newRoom.key, roomObj);
-    }
 
-    async function enterRoom(roomId, roomData) {
-        if (currentRoomId) exitCinema();
-        currentRoomId = roomId;
-        currentRoomData = roomData;
-        currentRoomRef = db.ref(`rooms/${roomId}`);
-        document.getElementById('cinema-location').innerHTML = `🎬 Loket ${roomData.loket} | Pintu ${roomData.pintu}`;
-        document.getElementById('cinema').classList.add('active');
-        document.getElementById('cinema-overlay').style.display = 'flex';
-        iframePlayer.src = '';
-        
-        currentRoomRef.on('value', (snap) => {
-            const data = snap.val();
-            if (!data) { exitCinema(); return; }
-            currentRoomData = data;
-            const now = Date.now();
-            const schedule = data.scheduleTime;
-            
-            if (now < schedule) {
-                document.getElementById('cinema-overlay').style.display = 'flex';
-                updateCountdownUI(schedule);
-                return;
-            }
-            if (data.phase === 'waiting' && now >= schedule) {
-                currentRoomRef.update({ phase: 'main' });
-            }
-            if (data.phase === 'main') {
-                document.getElementById('cinema-overlay').style.display = 'none';
-                const embedUrl = getNocookieEmbedUrl(data.videoId, 1);
-                if (iframePlayer.src !== embedUrl) {
-                    iframePlayer.src = embedUrl;
+        showLoading('Menyimpan ke database...', 80);
+        await saveVideoToCache(vid, verifiedVideoData);
+        hideLoading();
+        updateVideoInfoUI(verifiedVideoData, false);
+        txt.textContent = '✓ Berhasil diproses';
+        showToast('Video berhasil di-cache via cobalt!', 'cobalt');
+
+    } catch(e) {
+        hideLoading();
+        console.error('Verify error:', e);
+        showToast('Error: ' + e.message, 'error');
+        txt.textContent = 'Gagal — Coba Lagi';
+    } finally {
+        btn.disabled = false; spin.classList.add('hidden');
+    }
+}
+
+async function saveVideoToCache(vid, data) {
+    try {
+        await db.ref('video_cache/' + vid).set({
+            title: data.title, channel: data.channel,
+            thumbnail: data.thumbnail, downloadUrl: data.downloadUrl,
+            videoId: vid, cachedAt: firebase.database.ServerValue.TIMESTAMP
+        });
+        await db.ref('movie_collection/' + vid).set({
+            title: data.title, thumbnail: data.thumbnail,
+            channel: data.channel, videoId: vid,
+            addedAt: firebase.database.ServerValue.TIMESTAMP
+        });
+        updateCachedMovieCount();
+    } catch(e) { console.error('saveVideoToCache error:', e); }
+}
+
+function updateVideoInfoUI(data, isCached) {
+    document.getElementById('video-title').textContent = data.title || '-';
+    document.getElementById('video-channel').textContent = data.channel || '-';
+    document.getElementById('video-id-display').textContent = data.id || '-';
+    document.getElementById('video-thumbnail').src = data.thumbnail || '';
+    document.getElementById('video-cache-info').textContent = isCached ? '✓ Instant (dari DB)' : '✓ Baru di-cache';
+    document.getElementById('video-info-display').classList.add('active');
+    const pill = document.getElementById('cache-status');
+    if (isCached) { pill.className = 'cache-pill cached'; pill.textContent = 'CACHED ✓'; }
+    else { pill.className = 'cache-pill new'; pill.textContent = 'CACHED BARU'; }
+}
+
+async function updateCachedMovieCount() {
+    try {
+        const snap = await db.ref('video_cache').once('value');
+        const count = snap.val() ? Object.keys(snap.val()).length : 0;
+        document.getElementById('cached-count').textContent = count;
+    } catch(e) {}
+}
+
+// ─── PRIVACY ───
+function selectPrivacy(type) {
+    currentPrivacy = type;
+    document.querySelectorAll('.privacy-option').forEach(o => {
+        o.classList.remove('selected');
+        o.querySelector('input').checked = false;
+    });
+    const sel = document.querySelector(`input[value="${type}"]`).closest('.privacy-option');
+    sel.classList.add('selected');
+    sel.querySelector('input').checked = true;
+    document.getElementById('access-code-container').classList.toggle('active', type === 'private');
+}
+
+// ─── HALLWAY: 6 Loket × 20 Pintu (2 baris × 10 kolom) ───
+function generateHallway() {
+    const h = document.getElementById('hallway');
+    let html = '';
+    for (let l = 1; l <= LOKETS; l++) {
+        const start = (l - 1) * PINTU_PER_LOKET + 1;
+        html += `<div class="loket-column">
+            <div class="loket-header">
+                LOKET ${l}
+                <span class="loket-count">${PINTU_PER_LOKET} Pintu</span>
+            </div>
+            <div class="pintu-container">`;
+        for (let i = 0; i < PINTU_PER_LOKET; i++) {
+            const p = start + i;
+            html += `<div class="pintu-item" id="door-${l}-${p}" onclick="tryJoinRoom(${l},${p})" title="Loket ${l} Pintu ${p}">
+                <div class="pintu-number">${p}</div>
+                <div class="pintu-dot"></div>
+            </div>`;
+        }
+        html += `</div></div>`;
+    }
+    h.innerHTML = html;
+    listenToRooms();
+}
+
+function listenToRooms() {
+    if (!db) return;
+    db.ref('rooms').on('value', snap => {
+        // Reset all
+        document.querySelectorAll('.pintu-item').forEach(el => {
+            el.classList.remove('occupied');
+        });
+        const rooms = snap.val();
+        if (!rooms) return;
+        Object.values(rooms).forEach(room => {
+            if (!room.loket || !room.pintu) return;
+            const el = document.getElementById(`door-${room.loket}-${room.pintu}`);
+            if (el) el.classList.add('occupied');
+        });
+    }, e => console.error('listenToRooms error:', e));
+}
+
+function tryJoinRoom(loket, pintu) {
+    if (!db) { showToast('Database tidak tersedia', 'error'); return; }
+    showToast(`Mengecek Loket ${loket} Pintu ${pintu}...`);
+    db.ref('rooms').orderByChild('loket').equalTo(loket).once('value').then(snap => {
+        let found = false;
+        snap.forEach(child => {
+            const room = child.val();
+            if (room.pintu === pintu) {
+                found = true;
+                if (room.privacy === 'private') {
+                    const code = prompt('Room Private. Masukkan kode akses (4 digit):');
+                    if (code !== String(room.accessCode)) {
+                        showToast('Kode akses salah!', 'error'); return;
+                    }
                 }
+                enterCinema(child.key, room);
             }
         });
-        
-        currentRoomRef.child('chat').orderByChild('timestamp').limitToLast(50).on('child_added', (snap) => {
-            const msg = snap.val();
-            if (msg) addChatMsg(msg.sender, msg.text);
-        });
-        
-        if (countdownInterval) clearInterval(countdownInterval);
-        countdownInterval = setInterval(() => {
-            if (currentRoomData && currentRoomData.scheduleTime && currentRoomData.phase === 'waiting') {
-                updateCountdownUI(currentRoomData.scheduleTime);
-            }
-        }, 500);
+        if (!found) showToast('Pintu kosong — belum ada room di sini.');
+    }).catch(e => { showToast('Gagal cek room', 'error'); console.error(e); });
+}
+
+// ─── BOOKING ───
+function getCapacity(tier) {
+    const r = {
+        free:[1,57], year_10k:[100,142], month_10k:[100,160],
+        year_20k:[166,198], month_20k:[166,200], month_30k:[200,300]
+    };
+    const [mn,mx] = r[tier] || [1,57];
+    return Math.floor(Math.random()*(mx-mn+1))+mn;
+}
+function updateQuotaPreview() {
+    document.getElementById('quota-preview').textContent =
+        getCapacity(document.getElementById('room-tier').value);
+}
+function setupDateTimeMin() {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.getElementById('room-time').min = now.toISOString().slice(0,16);
+    // Default: 30 min from now
+    now.setMinutes(now.getMinutes() + 30);
+    document.getElementById('room-time').value = now.toISOString().slice(0,16);
+}
+
+function processBooking() {
+    if (!verifiedVideoData) { showToast('Verifikasi video dulu!', 'error'); return; }
+    const timeInput = document.getElementById('room-time').value;
+    if (!timeInput) { showToast('Pilih waktu tayang!', 'error'); return; }
+
+    const tier = document.getElementById('room-tier').value;
+    const loket = Math.floor(Math.random() * LOKETS) + 1;
+    const pintuOffset = (loket - 1) * PINTU_PER_LOKET + 1;
+    const pintu = Math.floor(Math.random() * PINTU_PER_LOKET) + pintuOffset;
+    const capacity = getCapacity(tier);
+    const scheduleTime = new Date(timeInput).getTime();
+    const privacy = currentPrivacy;
+    const accessCode = privacy === 'private' ? document.getElementById('access-code').value : null;
+
+    if (privacy === 'private' && (!accessCode || accessCode.length !== 4)) {
+        showToast('Kode akses harus tepat 4 digit!', 'error'); return;
     }
 
-    function updateCountdownUI(scheduleTime) {
-        const diff = scheduleTime - Date.now();
-        if (diff <= 0) return;
-        const mins = Math.floor(diff / 60000);
-        const secs = Math.floor((diff % 60000) / 1000);
-        document.getElementById('countdown-text').innerText = `${mins}:${secs < 10 ? '0' + secs : secs}`;
+    const roomObj = {
+        loket, pintu,
+        videoId: verifiedVideoData.id,
+        videoTitle: verifiedVideoData.title,
+        videoUrl: verifiedVideoData.downloadUrl,
+        isCached: verifiedVideoData.isCached,
+        capacity, scheduleTime,
+        createdAt: firebase.database.ServerValue.TIMESTAMP,
+        status: 'waiting', currentPlayTime: 0,
+        phase: 'waiting', privacy,
+        accessCode: accessCode || null,
+        hostUsername: myUsername
+    };
+
+    db.ref('rooms').push(roomObj).then(() => {
+        closeCreateRoom();
+        startPrintingAnimation(capacity, roomObj);
+    }).catch(e => { showToast('Gagal buat room: ' + e.message, 'error'); });
+}
+
+// ─── PRINTER ANIMATION ───
+function startPrintingAnimation(capacity, room) {
+    const overlay = document.getElementById('printer-overlay');
+    const stack = document.getElementById('ticket-stack');
+    stack.innerHTML = '';
+    overlay.style.display = 'flex';
+
+    const count = capacity <= 50 ? capacity : capacity <= 100 ? 4 : capacity <= 200 ? 8 : 12;
+    let printed = 0;
+
+    function next() {
+        if (printed >= count) {
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                showTicketBadge(room.loket, room.pintu);
+                showToast(`Room dibuat! Loket ${room.loket} Pintu ${room.pintu}`, 'success');
+            }, 800);
+            return;
+        }
+        const t = document.createElement('div');
+        t.className = 'ticket-paper';
+        t.innerHTML = `<h3>TMO CINEMA</h3>
+            <div style="font-size:0.65rem;margin:3px 0;color:#555;">AD-FREE · COBALT POWERED</div>
+            <div style="font-weight:700;font-size:1rem;">LOKET ${room.loket} · PINTU ${room.pintu}</div>
+            <div style="border-top:1px dashed #ccc;margin-top:8px;padding-top:6px;font-size:0.6rem;color:#666;">
+                Kapasitas: ${capacity} Org · No Ads!
+            </div>`;
+        t.style.animation = 'printOut 1.8s linear forwards';
+        stack.appendChild(t);
+        printed++;
+        setTimeout(next, 350);
+    }
+    next();
+}
+
+// ─── TICKET BADGE ───
+function showTicketBadge(loket, pintu) {
+    document.getElementById('ticket-loket').textContent = loket;
+    document.getElementById('ticket-pintu').textContent = pintu;
+    document.getElementById('ticket-badge').classList.add('active');
+}
+function hideTicketBadge() { document.getElementById('ticket-badge').classList.remove('active'); }
+
+// ─── CINEMA ───
+async function enterCinema(roomId, room, resumeTime = 0) {
+    currentRoomId = roomId; roomData = room;
+    dbRoomRef = db.ref('rooms/' + roomId);
+    currentVideoPhase = null; isUsingNativePlayer = false; userInteracted = false;
+
+    hideTicketBadge();
+    document.getElementById('cinema-loket').textContent = room.loket;
+    document.getElementById('cinema-pintu').textContent = room.pintu;
+    document.getElementById('cinema-view').classList.remove('lights-off');
+    document.getElementById('cinema-overlay-ui').classList.remove('hidden');
+    document.getElementById('native-player').classList.remove('active');
+    document.getElementById('yt-player-wrapper').classList.add('hidden');
+    document.getElementById('chat-box').innerHTML = '';
+    document.getElementById('play-btn-cinema').style.display = 'none';
+    document.getElementById('cinema-view').classList.add('active');
+
+    addSystemChat('🎬 Selamat datang di ThMOvie [AD-FREE]!');
+    addSystemChat('✅ Video via cobalt.tools — tanpa iklan YouTube');
+
+    sessionSaveInterval = setInterval(saveSession, 5000);
+
+    dbRoomRef.on('value', snap => handleDbUpdate(snap, resumeTime), e => {
+        console.error('Cinema DB error:', e);
+        showToast('Koneksi bermasalah', 'error');
+    });
+    dbRoomRef.child('chat').orderByChild('timestamp').limitToLast(40).on('child_added', snap => {
+        const m = snap.val();
+        if (m) addChatMessage(m.sender, m.text);
+    });
+
+    if (countdownInterval) clearInterval(countdownInterval);
+    countdownInterval = setInterval(() => {
+        if (roomData && currentVideoPhase === 'waiting') updateCountdownDisplay();
+    }, 1000);
+}
+
+function handleDbUpdate(snap, resumeTime = 0) {
+    const data = snap.val();
+    if (!data) { exitCinema(); return; }
+    roomData = data;
+    const now = Date.now();
+    const phase = data.phase || 'waiting';
+
+    if (now < data.scheduleTime) {
+        if (currentVideoPhase !== 'waiting') {
+            currentVideoPhase = 'waiting';
+            document.getElementById('cinema-view').classList.remove('lights-off');
+            document.getElementById('cinema-overlay-ui').classList.remove('hidden');
+            stopVideo();
+        }
+        updateCountdownDisplay(); return;
     }
 
-    function addChatMsg(sender, txt) {
-        const container = document.getElementById('chat-messages');
-        const div = document.createElement('div');
-        div.style.marginBottom = '6px';
-        div.style.fontSize = '0.8rem';
-        div.style.wordBreak = 'break-word';
-        div.innerHTML = `<b>${escapeHtml(sender)}:</b> ${escapeHtml(txt)}`;
-        container.appendChild(div);
-        container.scrollTop = container.scrollHeight;
+    if (phase === 'intro') {
+        if (currentVideoPhase !== 'intro') {
+            currentVideoPhase = 'intro';
+            document.getElementById('cinema-view').classList.add('lights-off');
+            document.getElementById('cinema-overlay-ui').classList.add('hidden');
+            playIntro();
+        }
+        return;
     }
 
-    function escapeHtml(str) { 
-        if (!str) return '';
-        return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
-    }
+    if (phase === 'main') {
+        const elapsed = now - data.scheduleTime - (INTRO_DURATION_SEC * 1000);
+        const expected = Math.max(0, Math.floor(elapsed / 1000));
+        const startAt = resumeTime > 0 ? Math.max(resumeTime, expected) : expected;
 
-    function sendChat() {
-        const input = document.getElementById('chat-input');
-        const text = input.value.trim();
-        if (text && currentRoomRef) {
-            currentRoomRef.child('chat').push({ sender: myUsername, text: text, timestamp: Date.now() });
-            input.value = '';
+        if (currentVideoPhase !== 'main') {
+            currentVideoPhase = 'main';
+            document.getElementById('cinema-view').classList.add('lights-off');
+            document.getElementById('cinema-overlay-ui').classList.add('hidden');
+            playMainVideo(data.videoUrl, startAt);
+            resumeTime = 0; // only use once
+        } else {
+            syncVideoTime(expected);
         }
     }
+}
 
-    function exitCinema() {
-        if (currentRoomRef) { currentRoomRef.off(); currentRoomRef = null; }
-        if (countdownInterval) clearInterval(countdownInterval);
-        iframePlayer.src = '';
-        document.getElementById('cinema').classList.remove('active');
-        currentRoomId = null;
-        currentRoomData = null;
+function updateCountdownDisplay() {
+    if (!roomData) return;
+    const diff = roomData.scheduleTime - Date.now();
+    if (diff > 0) {
+        const m = Math.floor(diff / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        document.getElementById('countdown-timer').textContent = `${m}:${s<10?'0'+s:s}`;
+    } else {
+        document.getElementById('countdown-timer').textContent = '0:00';
+    }
+}
+
+function playIntro() {
+    // Use YouTube nocookie for intro
+    const np = document.getElementById('native-player');
+    const yw = document.getElementById('yt-player-wrapper');
+    np.classList.remove('active');
+    yw.classList.remove('hidden');
+    if (player) { try { player.destroy(); } catch(e) {} player = null; }
+
+    player = new YT.Player('player', {
+        height: '100%', width: '100%', videoId: INTRO_VIDEO_ID,
+        // Use nocookie host via playerVars
+        host: 'https://www.youtube-nocookie.com',
+        playerVars: { autoplay: 1, controls: 0, rel: 0, modestbranding: 1, disablekb: 1 },
+        events: {
+            onReady: e => { e.target.playVideo(); },
+            onError: e => { console.error('YT intro error:', e.data); showToast('Intro gagal dimuat', 'error'); }
+        }
+    });
+    isUsingNativePlayer = false;
+}
+
+function playMainVideo(videoUrl, startTime) {
+    if (!videoUrl || videoUrl === 'undefined' || videoUrl === 'null') {
+        showToast('URL video tidak valid. Coba buat room baru.', 'error');
+        console.error('Invalid videoUrl:', videoUrl); return;
     }
 
-    function openRules() { document.getElementById('rules-modal').classList.add('open'); }
-    function closeRules() { document.getElementById('rules-modal').classList.remove('open'); }
+    if (player) { try { player.destroy(); } catch(e) {} player = null; }
+    document.getElementById('yt-player-wrapper').classList.add('hidden');
+    const np = document.getElementById('native-player');
+    np.classList.add('active');
 
-    // Auto cleanup rooms older than 24 hours
-    setInterval(() => {
-        const cutoff = Date.now() - 24 * 3600000;
-        db.ref('rooms').once('value', snap => {
-            snap.forEach(s => {
-                if (s.val().createdAt < cutoff) s.ref.remove();
-            });
+    const vid = document.getElementById('video-element');
+    vid.src = videoUrl;
+    vid.currentTime = Math.max(0, startTime || 0);
+
+    const p = vid.play();
+    if (p !== undefined) {
+        p.then(() => { userInteracted = true; })
+         .catch(() => {
+             document.getElementById('play-btn-cinema').style.display = 'block';
+             showToast('Tap tombol Play untuk mulai', 'cobalt');
+         });
+    }
+    isUsingNativePlayer = true;
+    addSystemChat('▶️ Memutar video — tanpa iklan!');
+    saveSession();
+}
+
+function syncVideoTime(expected) {
+    if (!isUsingNativePlayer) return;
+    const vid = document.getElementById('video-element');
+    if (Math.abs(vid.currentTime - expected) > 3) vid.currentTime = expected;
+    if (vid.paused && userInteracted) vid.play().catch(() => {});
+}
+function syncVideoWithServer() {
+    if (!roomData || !isUsingNativePlayer) return;
+    const elapsed = Date.now() - roomData.scheduleTime - (INTRO_DURATION_SEC * 1000);
+    const expected = Math.max(0, Math.floor(elapsed / 1000));
+    syncVideoTime(expected);
+}
+function stopVideo() {
+    const vid = document.getElementById('video-element');
+    if (isUsingNativePlayer) { vid.pause(); vid.src = ''; }
+    if (player) { try { player.destroy(); } catch(e) {} player = null; }
+    isUsingNativePlayer = false;
+}
+function exitCinema() {
+    document.getElementById('cinema-view').classList.remove('active', 'lights-off');
+    if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+    clearSession(); stopVideo();
+    if (dbRoomRef) { dbRoomRef.off(); dbRoomRef.child('chat').off(); dbRoomRef = null; }
+    roomData = null; currentVideoPhase = null; currentRoomId = null;
+    isUsingNativePlayer = false; userInteracted = false;
+}
+
+// ─── CHAT ───
+function handleChat(e) { if (e.key === 'Enter') sendChatMessage(); }
+function sendChatMessage() {
+    const input = document.getElementById('chat-msg');
+    const text = input.value.trim();
+    if (text && dbRoomRef) {
+        dbRoomRef.child('chat').push({
+            sender: myUsername, text,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+        }).catch(e => console.log('Chat error:', e));
+        input.value = '';
+        input.focus();
+    }
+}
+function addChatMessage(sender, text) {
+    const box = document.getElementById('chat-box');
+    const div = document.createElement('div');
+    div.className = 'chat-msg';
+    div.innerHTML = `<strong>${escHtml(sender)}:</strong> ${escHtml(text)}`;
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+}
+function addSystemChat(text) {
+    const box = document.getElementById('chat-box');
+    const div = document.createElement('div');
+    div.className = 'chat-msg system';
+    div.textContent = text;
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+}
+function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─── SERVER CRON (phase updater) ───
+setInterval(() => {
+    if (!db) return;
+    const now = Date.now();
+    db.ref('rooms').once('value').then(snap => {
+        if (!snap.val()) return;
+        snap.forEach(child => {
+            const r = child.val();
+            if (r.phase === 'waiting' && now >= r.scheduleTime) {
+                child.ref.update({ phase: 'intro' }).catch(() => {});
+            } else if (r.phase === 'intro' && (now - r.scheduleTime) >= (INTRO_DURATION_SEC * 1000)) {
+                const t = Math.floor((now - r.scheduleTime - INTRO_DURATION_SEC*1000) / 1000);
+                child.ref.update({ phase: 'main', currentPlayTime: t }).catch(() => {});
+            }
         });
-    }, 3600000);
+    }).catch(() => {});
+}, 3000);
 
-    buildHallway();
-    const now = new Date();
-    now.setMinutes(now.getMinutes() + 5);
-    document.getElementById('schedule-time').min = now.toISOString().slice(0, 16);
-    document.getElementById('schedule-time').value = now.toISOString().slice(0, 16);
+// ─── AUTO CLEANUP (48h) ───
+function cleanOldRooms() {
+    if (!db) return;
+    db.ref('rooms').once('value').then(snap => {
+        if (!snap.val()) return;
+        const cutoff = Date.now() - 48*3600*1000;
+        snap.forEach(child => {
+            const r = child.val();
+            if (r.createdAt && r.createdAt < cutoff) child.ref.remove().catch(() => {});
+        });
+    }).catch(() => {});
+}
+setInterval(cleanOldRooms, 600000);
+cleanOldRooms();
 </script>
 </body>
 </html>
