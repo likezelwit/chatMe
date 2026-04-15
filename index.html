@@ -4,13 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ThMOvie (TMO) | Private Watch Party</title>
-    <!-- Google Fonts Poppins -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Favicon -->
     <link rel="icon" href="data:,">
 
-    <!-- Firebase SDK (Compat version for standalone HTML) -->
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
@@ -18,402 +15,248 @@
         :root {
             --bg-color: #050505;
             --text-color: #ffffff;
-            --secondary-bg: #121212;
             --card-bg: #1e1e1e;
             --accent-color: #ff0055;
             --border-color: #333;
             --gold: #ffd700;
             --input-bg: #2a2a2a;
             --success: #00c851;
+            --yellow: #ffeb3b;
         }
 
-        * {
-            box-sizing: border-box;
-            user-select: none; /* Mencegah seleksi teks agar terasa seperti aplikasi native */
-        }
-
+        * { box-sizing: border-box; user-select: none; }
         body {
-            margin: 0;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: 'Poppins', sans-serif;
-            overflow: hidden; /* Kita mengontrol scroll per section */
-            height: 100vh;
-            width: 100vw;
+            margin: 0; background-color: var(--bg-color); color: var(--text-color);
+            font-family: 'Poppins', sans-serif; overflow: hidden; height: 100vh; width: 100vw;
         }
 
-        /* --- UTILITIES --- */
         .hidden { display: none !important; }
         .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            font-family: inherit;
-            transition: transform 0.2s, opacity 0.2s;
-            text-align: center;
+            padding: 12px 24px; border: none; border-radius: 8px; font-weight: bold;
+            cursor: pointer; font-family: inherit; transition: transform 0.2s, opacity 0.2s; text-align: center;
         }
         .btn:active { transform: scale(0.95); }
         .btn-primary { background: var(--accent-color); color: white; box-shadow: 0 4px 15px rgba(255,0,85,0.4); }
         .btn-secondary { background: var(--card-bg); color: white; border: 1px solid var(--border-color); }
         
-        /* --- NOTIFICATIONS (No Alerts) --- */
+        /* Toast */
         #toast-container {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 9999;
-            width: 90%;
-            max-width: 400px;
-            pointer-events: none;
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 9999; width: 90%; max-width: 400px; pointer-events: none;
         }
         .toast {
-            background: rgba(30, 30, 30, 0.95);
-            border-left: 4px solid var(--accent-color);
-            color: white;
-            padding: 15px;
-            margin-bottom: 10px;
-            border-radius: 4px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-            backdrop-filter: blur(5px);
-            animation: slideDown 0.3s ease-out;
-            pointer-events: auto;
-            font-size: 0.9rem;
+            background: rgba(30, 30, 30, 0.95); border-left: 4px solid var(--accent-color);
+            color: white; padding: 15px; margin-bottom: 10px; border-radius: 4px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5); animation: slideDown 0.3s ease-out;
+            pointer-events: auto; font-size: 0.9rem;
         }
         @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        /* --- VIEW: LOBBY --- */
-        #lobby-view {
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
+        /* View: LOBBY */
+        #lobby-view { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
         header {
-            padding: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(5,5,5,0.9);
-            border-bottom: 1px solid var(--border-color);
-            z-index: 10;
+            padding: 15px; display: flex; justify-content: space-between; align-items: center;
+            background: rgba(5,5,5,0.9); border-bottom: 1px solid var(--border-color); z-index: 10;
         }
         .logo { font-size: 1.5rem; font-weight: 700; letter-spacing: 1px; }
         .logo span { color: var(--accent-color); }
         .rules-btn { font-size: 0.8rem; color: #888; cursor: pointer; text-decoration: underline; }
 
-        /* Rekomendasi Card */
-        .hero-section {
-            padding: 20px;
-            flex-shrink: 0;
-        }
+        .hero-section { padding: 20px; flex-shrink: 0; }
         .movie-card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            overflow: hidden;
-            display: flex;
-            height: 160px;
-            position: relative;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            background: var(--card-bg); border-radius: 12px; overflow: hidden;
+            display: flex; height: 160px; position: relative; box-shadow: 0 8px 20px rgba(0,0,0,0.3);
         }
-        .movie-poster {
-            width: 110px;
-            background-size: cover;
-            background-position: center;
-        }
-        .movie-info {
-            padding: 15px;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
+        .movie-poster { width: 110px; background-size: cover; background-position: center; }
+        .movie-info { padding: 15px; flex: 1; display: flex; flex-direction: column; justify-content: center; }
         .movie-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 5px; }
         .movie-meta { font-size: 0.8rem; color: #aaa; }
-        .badge { 
-            position: absolute; top: 10px; right: 10px; 
-            background: var(--gold); color: #000; 
+        .badge {
+            position: absolute; top: 10px; right: 10px; background: var(--gold); color: #000;
             font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; font-weight: bold;
         }
 
-        /* Booking Buttons */
-        .booking-actions {
-            padding: 0 20px 15px 20px;
-            display: flex;
-            gap: 15px;
-            flex-shrink: 0;
-        }
+        .booking-actions { padding: 0 20px 15px 20px; display: flex; gap: 15px; flex-shrink: 0; }
         .booking-actions .btn { flex: 1; }
 
-        /* --- INTERACTIVE HALLWAY (LOKET & PINTU) --- */
         .hallway-label {
-            text-align: center;
-            font-size: 0.9rem;
-            color: #888;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
+            text-align: center; font-size: 0.9rem; color: #888; margin-bottom: 10px;
+            text-transform: uppercase; letter-spacing: 2px;
         }
 
         .hallway-wrapper {
-            position: relative;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            background: #080808;
+            position: relative; flex: 1; display: flex; flex-direction: column;
+            overflow: hidden; background: #080808;
         }
-
         .hallway-container {
-            flex: 1;
-            display: flex;
-            overflow-x: auto; /* Scroll horizontal untuk Loket */
-            overflow-y: hidden;
-            scroll-snap-type: x mandatory;
-            position: relative;
-            scroll-behavior: smooth; /* Efek smooth scroll saat panah diklik */
+            flex: 1; display: flex; overflow-x: auto; overflow-y: hidden;
+            scroll-snap-type: x mandatory; position: relative; scroll-behavior: smooth;
         }
-        
-        /* Hide scrollbar */
         .hallway-container::-webkit-scrollbar { display: none; }
         .hallway-container { -ms-overflow-style: none; scrollbar-width: none; }
 
-        /* NAVIGATION ARROWS (PC Only) */
         .nav-arrow {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 40px;
-            height: 40px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(4px);
-            color: white;
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 20;
-            font-size: 1.5rem;
-            transition: background 0.3s;
-            user-select: none;
+            position: absolute; top: 50%; transform: translateY(-50%); width: 40px; height: 40px;
+            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(4px); color: white;
+            border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; cursor: pointer; z-index: 20;
+            font-size: 1.5rem; transition: background 0.3s;
         }
         .nav-arrow:hover { background: var(--accent-color); border-color: var(--accent-color); }
         .nav-arrow.left { left: 10px; }
         .nav-arrow.right { right: 10px; }
 
-        /* Sembunyikan panah di Mobile / Tablet */
-        @media (max-width: 768px) {
-            .nav-arrow { display: none; }
-        }
+        @media (max-width: 768px) { .nav-arrow { display: none; } }
 
         .loket-column {
-            min-width: 85vw; /* Lebar hampir satu layar */
-            height: 100%;
-            border-right: 1px solid #1a1a1a;
-            scroll-snap-align: center;
-            display: flex;
-            flex-direction: column;
+            min-width: 85vw; height: 100%; border-right: 1px solid #1a1a1a;
+            scroll-snap-align: center; display: flex; flex-direction: column;
             background: linear-gradient(180deg, #0f0f0f 0%, #050505 100%);
         }
-
         .loket-header {
-            padding: 15px;
-            text-align: center;
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: var(--accent-color);
-            border-bottom: 1px dashed #333;
-            background: rgba(255,255,255,0.02);
-            flex-shrink: 0;
+            padding: 15px; text-align: center; font-size: 1.2rem; font-weight: bold;
+            color: var(--accent-color); border-bottom: 1px dashed #333;
+            background: rgba(255,255,255,0.02); flex-shrink: 0;
         }
 
-        /* Pintu Grid dalam Loket */
         .pintu-container {
-            flex: 1;
-            overflow-y: auto; /* Scroll vertikal untuk Pintu */
-            padding: 20px;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-            grid-auto-rows: 100px;
-            gap: 15px;
-            align-content: start;
+            flex: 1; overflow-y: auto; padding: 20px;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            grid-auto-rows: 100px; gap: 15px; align-content: start;
         }
-        
         .pintu-container::-webkit-scrollbar { width: 4px; }
         .pintu-container::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
 
         .pintu-item {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            position: relative;
+            background: var(--card-bg); border: 2px solid var(--border-color); border-radius: 8px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.3s; position: relative;
         }
-        .pintu-item:active { background: #333; }
-        .pintu-item.occupied { border-color: var(--accent-color); background: rgba(255,0,85,0.1); }
+        .pintu-item:active { transform: scale(0.95); }
+        
+        /* PERUBAHAN WARNA PINTU MENJADI KUNING SAAT TERISI */
+        .pintu-item.occupied { 
+            border-color: var(--yellow); 
+            background: rgba(255, 235, 59, 0.15); 
+            box-shadow: 0 0 15px rgba(255, 235, 59, 0.2);
+        }
         .pintu-number { font-size: 1.2rem; font-weight: bold; }
         .pintu-status { font-size: 0.6rem; margin-top: 5px; color: #666; }
-        .pintu-item.occupied .pintu-status { color: var(--accent-color); }
+        .pintu-item.occupied .pintu-status { color: var(--yellow); font-weight: 600; }
 
-        /* --- VIEW: CREATE ROOM --- */
+        /* View: CREATE ROOM */
         #create-room-view {
-            padding: 20px;
-            height: 100%;
-            overflow-y: auto;
-            background: var(--bg-color);
-            position: absolute;
-            top: 0; left: 0; width: 100%;
-            z-index: 50;
-            transform: translateX(100%);
-            transition: transform 0.3s ease-in-out;
+            padding: 20px; height: 100%; overflow-y: auto; background: var(--bg-color);
+            position: absolute; top: 0; left: 0; width: 100%; z-index: 50;
+            transform: translateX(100%); transition: transform 0.3s ease-in-out;
         }
         #create-room-view.active { transform: translateX(0); }
 
         .form-group { margin-bottom: 20px; }
         .form-label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: #aaa; }
         .form-input, .form-select {
-            width: 100%;
-            padding: 14px;
-            background: var(--input-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            color: white;
-            font-family: inherit;
-            outline: none;
+            width: 100%; padding: 14px; background: var(--input-bg); border: 1px solid var(--border-color);
+            border-radius: 8px; color: white; font-family: inherit; outline: none;
         }
         .form-input:focus { border-color: var(--accent-color); }
-        
         .back-btn { background: transparent; color: #fff; padding: 10px; margin-bottom: 10px; font-size: 0.9rem; }
 
-        /* --- ANIMATED PRINTER --- */
+        /* Printer Animation */
         #printer-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95);
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.5s;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 100; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.5s;
         }
         #printer-overlay.active { opacity: 1; pointer-events: auto; }
 
         .printer-body {
-            width: 280px;
-            height: 40px;
-            background: #333;
-            border-radius: 4px;
-            position: relative;
-            z-index: 2;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            width: 280px; height: 40px; background: #333; border-radius: 4px;
+            position: relative; z-index: 2; box-shadow: 0 10px 20px rgba(0,0,0,0.5);
         }
         .printer-slot {
-            width: 240px;
-            height: 10px;
-            background: #000;
-            margin: 0 auto;
-            position: relative;
-            top: 30px;
-            z-index: 1;
+            width: 240px; height: 10px; background: #000; margin: 0 auto;
+            position: relative; top: 30px; z-index: 1;
         }
         .ticket-paper {
-            width: 220px;
-            background: #fff;
-            color: #000;
-            padding: 15px;
-            margin: 0 auto;
-            position: absolute;
-            top: 35px; /* Start inside printer */
-            left: 50%;
-            transform: translateX(-50%);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-            font-family: 'Courier New', Courier, monospace;
-            text-align: center;
-            border-top: 2px dashed #ccc;
-            opacity: 0;
+            width: 220px; background: #fff; color: #000; padding: 15px; margin: 0 auto;
+            position: absolute; top: 35px; left: 50%; transform: translateX(-50%);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3); font-family: 'Courier New', Courier, monospace;
+            text-align: center; border-top: 2px dashed #ccc; opacity: 0;
         }
-        /* Animation for each ticket */
         @keyframes printTicket {
             0% { top: 40px; opacity: 1; }
             100% { top: 400px; opacity: 1; }
         }
+        .printer-status { margin-top: 450px; color: white; font-size: 0.9rem; text-align: center; }
 
-        .printer-status {
-            margin-top: 450px;
-            color: white;
-            font-size: 0.9rem;
-            text-align: center;
-        }
-
-        /* --- CINEMA VIEW (Reuse & Adapt) --- */
+        /* Cinema View */
         #cinema-view {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: #000;
-            z-index: 80;
-            display: flex;
-            flex-direction: column;
-            opacity: 0; pointer-events: none; transition: opacity 0.5s;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #ffffff; /* AWALNYA PUTIH SAAT MASUK ROOM (HITUNG MUNDUR) */
+            z-index: 80; display: flex; flex-direction: column;
+            opacity: 0; pointer-events: none; transition: background-color 3s ease-in-out, opacity 0.5s;
         }
         #cinema-view.active { opacity: 1; pointer-events: auto; }
+        #cinema-view.lights-off { background-color: #000000; } /* EFek MATI LAMPU */
         
-        .cinema-video-container { flex: 3; position: relative; }
+        .cinema-video-container { flex: 3; position: relative; background: #000; display: flex; align-items: center; justify-content: center;}
         .cinema-chat-container { 
-            flex: 1; background: #111; display: flex; flex-direction: column; 
-            border-top: 1px solid #333; min-height: 200px; max-height: 40vh;
+            flex: 1; background: #f5f5f5; display: flex; flex-direction: column; 
+            border-top: 1px solid #ddd; min-height: 200px; max-height: 40vh; transition: background-color 3s;
         }
+        #cinema-view.lights-off .cinema-chat-container { background: #111; border-top: 1px solid #333; }
         
-        .chat-box-cinema { flex: 1; overflow-y: auto; padding: 10px; font-size: 0.85rem; }
-        .chat-msg { margin-bottom: 5px; background: #222; padding: 8px; border-radius: 6px; display: inline-block; max-width: 80%; word-wrap: break-word;}
-        .chat-msg.system { color: #888; font-style: italic; display: block; font-size: 0.75rem; text-align: center; background: none; margin: 10px 0;}
+        .chat-box-cinema { flex: 1; overflow-y: auto; padding: 10px; font-size: 0.85rem; color: #333; transition: color 3s;}
+        #cinema-view.lights-off .chat-box-cinema { color: #fff; }
         
-        .chat-input-area { padding: 10px; display: flex; border-top: 1px solid #333; background: #0a0a0a; }
+        .chat-msg { margin-bottom: 5px; background: #e0e0e0; color: #000; padding: 8px; border-radius: 6px; display: inline-block; max-width: 80%; word-wrap: break-word; transition: background 3s, color 3s;}
+        #cinema-view.lights-off .chat-msg { background: #222; color: #fff; }
+        
+        .chat-msg.system { color: #666; font-style: italic; display: block; font-size: 0.75rem; text-align: center; background: none !important; margin: 10px 0;}
+        #cinema-view.lights-off .chat-msg.system { color: #888; }
+        
+        .chat-input-area { padding: 10px; display: flex; border-top: 1px solid #ddd; background: #fff; transition: background 3s, border 3s;}
+        #cinema-view.lights-off .chat-input-area { background: #0a0a0a; border-top: 1px solid #333; }
+        
         .chat-input-area input { 
-            flex: 1; background: #222; border: 1px solid #444; color: white; 
-            padding: 10px; border-radius: 20px; outline: none; 
+            flex: 1; background: #f0f0f0; border: 1px solid #ccc; color: #000; 
+            padding: 10px; border-radius: 20px; outline: none; font-family: inherit; transition: background 3s, color 3s, border 3s;
         }
+        #cinema-view.lights-off .chat-input-area input { background: #222; border: 1px solid #444; color: #fff; }
         
         .cinema-info-overlay {
-            position: absolute; top: 10px; left: 10px; right: 10px;
-            display: flex; justify-content: space-between;
-            z-index: 10; pointer-events: none;
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 10; pointer-events: none; text-align: center;
         }
-        .cinema-badge { background: rgba(0,0,0,0.6); color: #fff; padding: 5px 10px; border-radius: 4px; font-size: 0.8rem; backdrop-filter: blur(4px); pointer-events: auto;}
+        .cinema-badge { 
+            position: absolute; background: rgba(0,0,0,0.6); color: #fff; padding: 5px 10px; 
+            border-radius: 4px; font-size: 0.8rem; backdrop-filter: blur(4px); pointer-events: auto; z-index: 20;
+        }
+        .badge-top-left { top: 10px; left: 10px; }
+        .badge-top-right { top: 10px; right: 10px; cursor: pointer; background: rgba(255,0,0,0.6); }
+        .badge-bottom-center { bottom: 10px; left: 50%; transform: translateX(-50%); }
         
-        .timer-display { color: var(--accent-color); font-weight: bold; }
+        .timer-display { color: var(--accent-color); font-weight: bold; font-size: 4rem; margin-bottom: 10px;}
+        .waiting-text { color: #555; font-weight: 600; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 2px;}
+        
+        .player-wrapper { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 5; }
 
-        /* --- MODAL RULES --- */
+        /* Modal Rules */
         #rules-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); z-index: 200;
-            display: flex; align-items: center; justify-content: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+            background: rgba(0,0,0,0.8); z-index: 200; display: flex;
+            align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s;
         }
         #rules-modal.open { opacity: 1; pointer-events: auto; }
-        .rules-content {
-            background: var(--card-bg); width: 90%; max-width: 400px; padding: 25px;
-            border-radius: 12px; border: 1px solid var(--border-color);
-        }
+        .rules-content { background: var(--card-bg); width: 90%; max-width: 400px; padding: 25px; border-radius: 12px; border: 1px solid var(--border-color); }
         .rules-content h2 { margin-top: 0; color: var(--accent-color); }
         .rules-list { padding-left: 20px; line-height: 1.6; font-size: 0.9rem; color: #ccc; }
         .close-rules { margin-top: 20px; width: 100%; }
-
     </style>
 </head>
 <body>
 
-    <!-- Toast Notifications -->
     <div id="toast-container"></div>
 
     <!-- View: LOBBY -->
@@ -439,20 +282,11 @@
             <button class="btn btn-secondary" onclick="showToast('Silakan pilih Pintu di bawah untuk Join Room!')">JOIN ROOM</button>
         </div>
 
-        <div class="hallway-label">
-            ← Geser untuk cari Loket & Geser Bawah untuk cari Pintu →
-        </div>
+        <div class="hallway-label">← Geser untuk cari Loket & Pintu →</div>
 
-        <!-- Interactive Hallway -->
         <div class="hallway-wrapper">
-            <!-- Tombol Navigasi Kiri (Hanya PC) -->
             <div class="nav-arrow left" onclick="scrollHallway(-1)">&#10094;</div>
-            
-            <div class="hallway-container" id="hallway">
-                <!-- Loket columns will be generated by JS -->
-            </div>
-
-            <!-- Tombol Navigasi Kanan (Hanya PC) -->
+            <div class="hallway-container" id="hallway"></div>
             <div class="nav-arrow right" onclick="scrollHallway(1)">&#10095;</div>
         </div>
     </div>
@@ -463,15 +297,13 @@
         <h2 style="color: var(--accent-color); margin-top: 0;">Buat Ruang Nonton</h2>
         
         <div class="form-group">
-            <label class="form-label">Link Video YouTube (Full URL atau ID)</label>
+            <label class="form-label">Link Video YouTube (Film Utama)</label>
             <input type="text" id="room-video-url" class="form-input" placeholder="https://youtube.com/watch?v=...">
         </div>
-
         <div class="form-group">
             <label class="form-label">Waktu Tayang (Jadwal)</label>
             <input type="datetime-local" id="room-time" class="form-input">
         </div>
-
         <div class="form-group">
             <label class="form-label">Tipe Akun (Simulasi Tier)</label>
             <select id="room-tier" class="form-select">
@@ -483,37 +315,39 @@
                 <option value="month_30k">VIP 30rb/Bln (200-300)</option>
             </select>
         </div>
-
         <div class="form-group">
             <label class="form-label">Estimasi Kuota: <span id="quota-preview" style="color: var(--accent-color);">0</span> Kursi</label>
         </div>
-
         <button class="btn btn-primary" style="width: 100%; margin-top: 20px;" onclick="processBooking()">BOOKING SEKARANG</button>
     </div>
 
-    <!-- Overlay: Printer Animation -->
+    <!-- Overlay: Printer -->
     <div id="printer-overlay">
         <div class="printer-body"></div>
         <div class="printer-slot"></div>
-        <!-- Tickets will be injected here -->
         <div id="ticket-stack"></div>
         <div class="printer-status">Mencetak Tiket...</div>
     </div>
 
-    <!-- View: CINEMA (Player) -->
+    <!-- View: CINEMA -->
     <div id="cinema-view">
+        <div class="cinema-badge badge-top-left">Loket <span id="cinema-loket">?</span> | Pintu <span id="cinema-pintu">?</span></div>
+        <div class="cinema-badge badge-top-right" onclick="exitCinema()">KELUAR</div>
+        
         <div class="cinema-video-container">
-            <div class="cinema-info-overlay">
-                <div class="cinema-badge">Loket <span id="cinema-loket">?</span> | Pintu <span id="cinema-pintu">?</span></div>
-                <div class="cinema-badge timer-display" id="countdown-timer">--:--</div>
-                <div class="cinema-badge" onclick="exitCinema()" style="cursor:pointer; background: rgba(255,0,0,0.5);">KELUAR</div>
+            <!-- Overlay Hitung Mundur (Muncul saat belum mulai, menghilang saat main) -->
+            <div class="cinema-info-overlay" id="cinema-overlay-ui">
+                <div class="timer-display" id="countdown-timer">--:--</div>
+                <div class="waiting-text">Menunggu Waktu Tayang</div>
             </div>
-            <div id="player"></div>
+            <!-- Tempat Player Muncul -->
+            <div class="player-wrapper hidden" id="player-wrapper">
+                <div id="player"></div>
+            </div>
         </div>
+
         <div class="cinema-chat-container">
-            <div class="chat-box-cinema" id="chat-box">
-                <div class="chat-msg system">Terhubung ke TMO Server...</div>
-            </div>
+            <div class="chat-box-cinema" id="chat-box"></div>
             <div class="chat-input-area">
                 <input type="text" id="chat-msg" placeholder="Ketik pesan..." onkeypress="handleChat(event)">
             </div>
@@ -536,24 +370,19 @@
         </div>
     </div>
 
-    <!-- YouTube API -->
     <script src="https://www.youtube.com/iframe_api"></script>
 
     <script>
-        // --- KONFIGURASI FIREBASE (PERBAIKAN REGION) ---
+        // --- KONFIGURASI FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyAumySmaAi8oHFnTu8QDtp_u_dZmoHlQd8",
             authDomain: "thmovie-3646f.firebaseapp.com",
-            // PERBAIKAN: Menambahkan databaseURL khusus region asia-southeast1
             databaseURL: "https://thmovie-3646f-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "thmovie-3646f",
             storageBucket: "thmovie-3646f.firebasestorage.app",
             messagingSenderId: "1041137356432",
-            appId: "1:1041137356432:web:96edbe3402937c82f09215",
-            measurementId: "G-6SNE976L7G"
+            appId: "1:1041137356432:web:96edbe3402937c82f09215"
         };
-
-        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
@@ -561,9 +390,13 @@
         let currentRoomId = null;
         let player = null;
         let roomData = null;
-        let playerCheckInterval = null;
-        let currentLoket = 1;
-        let currentPintu = 1;
+        let dbRoomRef = null; // Referensi spesifik room di Firebase untuk listener
+        let myUsername = "User_" + Math.floor(Math.random() * 1000);
+        let isIntroPlaying = false;
+        
+        // Konstanta Video
+        const INTRO_VIDEO_ID = "9v1atEBmUIc";
+        const INTRO_DURATION_SEC = 15; // Durasi intro dalam detik (disesuaikan jika perlu)
 
         // --- DOM ELEMENTS ---
         const createRoomView = document.getElementById('create-room-view');
@@ -572,6 +405,8 @@
         const cinemaView = document.getElementById('cinema-view');
         const quotaPreview = document.getElementById('quota-preview');
         const hallway = document.getElementById('hallway');
+        const cinemaOverlayUi = document.getElementById('cinema-overlay-ui');
+        const playerWrapper = document.getElementById('player-wrapper');
 
         // --- INIT ---
         window.onload = function() {
@@ -581,7 +416,6 @@
         };
 
         // --- UI FUNCTIONS ---
-
         function showToast(msg) {
             const container = document.getElementById('toast-container');
             const el = document.createElement('div');
@@ -592,42 +426,23 @@
         }
 
         function toggleRules(show) {
-            const el = document.getElementById('rules-modal');
-            if(show) el.classList.add('open');
-            else el.classList.remove('open');
+            document.getElementById('rules-modal').classList.toggle('open', show);
         }
 
-        function openCreateRoom() {
-            createRoomView.classList.add('active');
-        }
+        function openCreateRoom() { createRoomView.classList.add('active'); }
+        function closeCreateRoom() { createRoomView.classList.remove('active'); }
 
-        function closeCreateRoom() {
-            createRoomView.classList.remove('active');
-        }
-
-        // --- HALLWAY NAVIGATION LOGIC ---
         function scrollHallway(direction) {
-            // direction: -1 (kiri), 1 (kanan)
-            const scrollAmount = hallway.clientWidth * 0.85; // Scroll seukuran 1 layar loket
-            hallway.scrollBy({
-                left: scrollAmount * direction,
-                behavior: 'smooth'
-            });
+            hallway.scrollBy({ left: hallway.clientWidth * 0.85 * direction, behavior: 'smooth' });
         }
 
         // --- HALLWAY & ROOM LOGIC ---
-
-        // Generate Visualisasi Loket & Pintu
         function generateHallway() {
             let html = '';
-            // Buat 4 Loket Contoh
             for (let l = 1; l <= 4; l++) {
                 html += `<div class="loket-column">
                             <div class="loket-header">LOKET ${l}</div>
                             <div class="pintu-container">`;
-                
-                // Setiap Loket punya 5 Pintu
-                // Loket 1: 1-5, Loket 2: 6-10, dst
                 let startPintu = ((l-1) * 5) + 1;
                 for (let p = 0; p < 5; p++) {
                     let pintuNum = startPintu + p;
@@ -636,37 +451,30 @@
                                 <div class="pintu-status">KOSONG</div>
                              </div>`;
                 }
-                html += `   </div>
-                         </div>`;
+                html += `   </div></div>`;
             }
             hallway.innerHTML = html;
             listenToRooms();
         }
 
-        // Listener Firebase untuk update status pintu (Hijau/Merah)
         function listenToRooms() {
-            // Kita listen ke referensi 'rooms'
             db.ref('rooms').on('value', (snapshot) => {
-                // Reset visual dulu
+                // Reset semua pintu
                 document.querySelectorAll('.pintu-item').forEach(el => {
                     el.classList.remove('occupied');
                     el.querySelector('.pintu-status').innerText = "KOSONG";
-                    el.querySelector('.pintu-status').style.color = "#666";
-                    el.style.borderColor = "var(--border-color)";
                 });
 
                 const rooms = snapshot.val();
                 if (!rooms) return;
 
-                rooms.forEach(room => {
-                    if (room) {
-                        const doorId = `door-${room.loket}-${room.pintu}`;
-                        const el = document.getElementById(doorId);
-                        if (el) {
-                            el.classList.add('occupied');
-                            el.querySelector('.pintu-status').innerText = "PLAYING / FULL";
-                            el.querySelector('.pintu-status').style.color = "var(--accent-color)";
-                        }
+                Object.keys(rooms).forEach(key => {
+                    const room = rooms[key];
+                    const doorId = `door-${room.loket}-${room.pintu}`;
+                    const el = document.getElementById(doorId);
+                    if (el) {
+                        el.classList.add('occupied');
+                        el.querySelector('.pintu-status').innerText = "TERISI";
                     }
                 });
             });
@@ -675,31 +483,24 @@
         function tryJoinRoom(loket, pintu) {
             showToast(`Mengecek Loket ${loket} Pintu ${pintu}...`);
             
-            // Cari room berdasarkan loket dan pintu di Firebase
             db.ref('rooms').orderByChild('loket').equalTo(loket).once('value', snapshot => {
                 let found = false;
                 snapshot.forEach(childSnapshot => {
                     const room = childSnapshot.val();
                     if (room.pintu === pintu) {
                         found = true;
-                        // Masuk ke room
                         enterCinema(childSnapshot.key, room);
                     }
                 });
-
-                if (!found) {
-                    showToast("Pintu ini kosong / Belum ada room.");
-                }
+                if (!found) showToast("Pintu ini kosong / Belum ada room.");
             });
         }
 
         // --- CREATE ROOM LOGIC ---
-
         document.getElementById('room-tier').addEventListener('change', updateQuotaPreview);
 
         function updateQuotaPreview() {
-            const tier = document.getElementById('room-tier').value;
-            quotaPreview.innerText = getCapacity(tier);
+            quotaPreview.innerText = getCapacity(document.getElementById('room-tier').value);
         }
 
         function setupDateTimeInputMin() {
@@ -709,16 +510,11 @@
         }
 
         function getCapacity(tier) {
-            let min, max;
-            switch(tier) {
-                case 'free': min = 1; max = 57; break;
-                case 'year_10k': min = 100; max = 142; break;
-                case 'month_10k': min = 100; max = 160; break;
-                case 'year_20k': min = 166; max = 198; break;
-                case 'month_20k': min = 166; max = 200; break;
-                case 'month_30k': min = 200; max = 300; break;
-                default: min = 1; max = 57;
-            }
+            const ranges = {
+                'free': [1, 57], 'year_10k': [100, 142], 'month_10k': [100, 160],
+                'year_20k': [166, 198], 'month_20k': [166, 200], 'month_30k': [200, 300]
+            };
+            const [min, max] = ranges[tier] || [1, 57];
             return Math.floor(Math.random() * (max - min + 1)) + min;
         }
 
@@ -733,61 +529,35 @@
             const timeInput = document.getElementById('room-time').value;
             const tier = document.getElementById('room-tier').value;
 
-            if (!urlInput || !timeInput) {
-                showToast("Mohon lengkapi URL Video dan Waktu Tayang!");
-                return;
-            }
-
+            if (!urlInput || !timeInput) return showToast("Mohon lengkapi URL Video dan Waktu Tayang!");
+            
             const videoId = extractVideoID(urlInput);
-            if (!videoId) {
-                showToast("Format URL YouTube tidak valid!");
-                return;
-            }
+            if (!videoId) return showToast("Format URL YouTube tidak valid!");
 
-            // Generate Random Loket & Pintu
-            const rLoket = Math.floor(Math.random() * 4) + 1; // Loket 1-4
-            // Pintu harus sesuai range loket (Logic: Loket 1: 1-5, Loket 2: 6-10)
+            const rLoket = Math.floor(Math.random() * 4) + 1;
             const startP = ((rLoket-1) * 5) + 1;
             const rPintu = Math.floor(Math.random() * 5) + startP;
-
             const capacity = getCapacity(tier);
             const scheduleTime = new Date(timeInput).getTime();
 
-            // Simpan ke Firebase
             const newRoomRef = db.ref('rooms').push();
-            const roomId = newRoomRef.key;
-
             const roomObj = {
-                loket: rLoket,
-                pintu: rPintu,
-                videoId: videoId,
-                capacity: capacity,
-                scheduleTime: scheduleTime,
-                createdAt: firebase.database.ServerValue.TIMESTAMP,
-                status: 'waiting'
+                loket: rLoket, pintu: rPintu, videoId: videoId, capacity: capacity,
+                scheduleTime: scheduleTime, createdAt: firebase.database.ServerValue.TIMESTAMP,
+                status: 'waiting', currentPlayTime: 0, isPlayingIntro: false
             };
 
             newRoomRef.set(roomObj).then(() => {
-                // Mulai Animasi Print
-                startPrintingAnimation(capacity, roomId, roomObj);
-            }).catch(err => {
-                showToast("Gagal membuat room: " + err.message);
-            });
+                startPrintingAnimation(capacity, roomObj);
+            }).catch(err => showToast("Gagal membuat room: " + err.message));
         }
 
         // --- ANIMASI TIKET ---
-        function startPrintingAnimation(capacity, roomId, roomObj) {
+        function startPrintingAnimation(capacity, roomObj) {
             closeCreateRoom();
             printerOverlay.classList.add('active');
-            ticketStack.innerHTML = ''; // Reset
-
-            // Logika Jumlah Tiket di Print
-            let ticketsToPrint = 0;
-            if (capacity <= 50) ticketsToPrint = capacity; // Print semua jika kecil
-            else if (capacity <= 100) ticketsToPrint = 4;
-            else if (capacity <= 200) ticketsToPrint = 8;
-            else ticketsToPrint = 12; // Max 12
-
+            ticketStack.innerHTML = '';
+            let ticketsToPrint = capacity <= 50 ? capacity : capacity <= 100 ? 4 : capacity <= 200 ? 8 : 12;
             let printed = 0;
 
             function printNext() {
@@ -795,144 +565,211 @@
                     setTimeout(() => {
                         printerOverlay.classList.remove('active');
                         showToast(`Room Siap! Masuk ke Loket ${roomObj.loket} Pintu ${roomObj.pintu}`);
-                        // Scroll ke pintu yang dituju otomatis (opsional, kita biarkan user cari biar fun)
                     }, 1000);
                     return;
                 }
-
                 const ticket = document.createElement('div');
                 ticket.className = 'ticket-paper';
                 ticket.innerHTML = `
                     <h3 style="margin:0">TMO CINEMA</h3>
                     <div style="font-size:0.8rem; margin:5px 0;">ACCESS TICKET</div>
                     <div style="font-weight:bold; font-size:1.1rem;">LOKET ${roomObj.loket} - PINTU ${roomObj.pintu}</div>
-                    <div style="font-size:0.7rem; margin-top:5px;">ID: ${roomId.substr(0,6)}</div>
                     <div style="border-top:1px dashed #999; margin-top:8px; padding-top:5px; font-size:0.6rem;">
-                        Kapasitas: ${capacity} Org<br>
-                        Enjoy Movie!
-                    </div>
-                `;
-                
-                // Animasi CSS
+                        Kapasitas: ${capacity} Org<br>Enjoy Movie!
+                    </div>`;
                 ticket.style.animation = `printTicket 2s linear forwards`;
-                // Delay agar bertumpuk
-                ticket.style.animationDelay = '0s'; 
-
                 ticketStack.appendChild(ticket);
                 printed++;
-
-                // Print berikutnya setelah delay sedikit
-                setTimeout(printNext, 400); 
+                setTimeout(printNext, 400);
             }
-
             printNext();
         }
 
-        // --- CINEMA PLAYER LOGIC ---
+        // --- CINEMA PLAYER & SYNC LOGIC ---
 
         function enterCinema(roomId, room) {
             currentRoomId = roomId;
             roomData = room;
+            dbRoomRef = db.ref('rooms/' + roomId);
             
             document.getElementById('cinema-loket').innerText = room.loket;
             document.getElementById('cinema-pintu').innerText = room.pintu;
             
+            // SET TAMPILAN AWAL (LAMPU NYALA - PUTIH)
+            cinemaView.classList.remove('lights-off');
+            cinemaOverlayUi.classList.remove('hidden');
+            playerWrapper.classList.add('hidden');
+            document.getElementById('chat-box').innerHTML = '';
+
             cinemaView.classList.add('active');
-            
-            // Init Player
-            if (player) {
-                player.loadVideoById(room.videoId);
-            } else {
-                player = new YT.Player('player', {
-                    height: '100%',
-                    width: '100%',
-                    videoId: room.videoId,
-                    playerVars: { 'autoplay': 0, 'controls': 1, 'rel': 0 },
-                    events: { 'onReady': onPlayerReady }
-                });
+
+            // Tampilkan Rekomendasi UX di Chat
+            addSystemChat("🎬 Selamat datang di ThMOvie Private Watch Party!");
+            addSystemChat("💡 REKOMENDASI UX:");
+            addSystemChat("1. Gunakan HEADSET untuk pengalaman suara terbaik.");
+            addSystemChat("2. Naikan volume HP/PC Anda ke 89% atau lebih.");
+            addSystemChat("3. Gunakan koneksi WiFi yang stabil.");
+
+            // Listener Utama untuk Sinkronisasi Realtime dari Firebase
+            dbRoomRef.on('value', snapshot => {
+                const data = snapshot.val();
+                if (!data) return exitCinema();
+                
+                roomData = data;
+                syncPlayerWithFirebase(data);
+            });
+        }
+
+        function syncPlayerWithFirebase(data) {
+            const now = Date.now();
+            const schedule = data.scheduleTime;
+            const diff = schedule - now;
+
+            // ------------------------------
+            // FASE 1: HITUNG MUNDUR (WAITING)
+            // ------------------------------
+            if (diff > 0) {
+                cinemaView.classList.remove('lights-off'); // Pastikan tetap putih
+                cinemaOverlayUi.classList.remove('hidden'); // Tampilkan Timer
+                playerWrapper.classList.add('hidden'); // Sembunyikan Player
+                
+                const m = Math.floor(diff / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
+                document.getElementById('countdown-timer').innerText = `${m}:${s < 10 ? '0'+s : s}`;
+                
+                if (player) player.destroy();
+                player = null;
+                return;
             }
+
+            // ------------------------------
+            // FASE 2: WAKTUNYA TAYANG
+            // ------------------------------
+            cinemaOverlayUi.classList.add('hidden'); // Sembunyikan Timer
+            playerWrapper.classList.remove('hidden'); // Tampilkan Player Area
+
+            // Cek apakah sedang main INTRO atau FILM UTAMA
+            const isIntroPhase = data.isPlayingIntro === true;
+            
+            // Hitung durasi intro (asumsikan 15 detik, bisa diubah)
+            const introElapsed = now - schedule;
+            
+            if (isIntroPhase && introElapsed < (INTRO_DURATION_SEC * 1000)) {
+                // MATIKAN LAMPU PERLAHAN SAAT INTRO DIMULAI
+                cinemaView.classList.add('lights-off');
+                
+                if (!player || player.getIframe().src.indexOf(INTRO_VIDEO_ID) === -1) {
+                    if (player) player.destroy();
+                    player = createYTPlayer(INTRO_VIDEO_ID);
+                }
+                // Lock player agar tidak bisa di-skip/di-ubah saat intro
+                lockPlayerControls(true);
+            } 
+            else {
+                // FASE 3: FILM UTAMA
+                cinemaView.classList.add('lights-off'); // Pastikan hitam
+                
+                // Ganti ke film utama jika masih di intro
+                if (player && player.getIframe().src.indexOf(INTRO_VIDEO_ID) !== -1) {
+                    player.destroy();
+                    player = createYTPlayer(data.videoId);
+                    lockPlayerControls(false); // Boleh kontrol biasa saat film (tapi waktu dikunci server)
+                } else if (!player) {
+                    player = createYTPlayer(data.videoId);
+                    lockPlayerControls(false);
+                }
+
+                // Update Database Waktu Realtime (Jika ini user pertama yang memicu)
+                const expectedTime = Math.floor((now - schedule - (INTRO_DURATION_SEC * 1000)) / 1000);
+                
+                // Hanya update DB jika tidak ada data waktu, atau data waktu sudah tidak sinkron (miss-sync)
+                if (data.currentPlayTime === 0 || data.currentPlayTime === undefined || Math.abs(data.currentPlayTime - expectedTime) > 3) {
+                    dbRoomRef.update({ 
+                        isPlayingIntro: false, 
+                        currentPlayTime: expectedTime 
+                    });
+                } else {
+                    // Ikuti waktu dari database secara paksa
+                    forceSeekPlayer(data.currentPlayTime);
+                    if (player.getPlayerState() !== YT.PlayerState.PLAYING) {
+                        player.playVideo();
+                    }
+                }
+            }
+        }
+
+        function createYTPlayer(videoId) {
+            return new YT.Player('player', {
+                height: '100%', width: '100%', videoId: videoId,
+                playerVars: { 
+                    'autoplay': 1, 'controls': 1, 'rel': 0, 
+                    'disablekb': 1, 'modestbranding': 1, 'iv_load_policy': 3 
+                },
+                events: { 
+                    'onReady': (e) => e.target.playVideo(),
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        // MENCEGAH USER MEMUTAR MUNDIR/MEMPERCEPAT
+        function onPlayerStateChange(event) {
+            if (!roomData || roomData.isPlayingIntro) return;
+            
+            const targetTime = roomData.currentPlayTime;
+            const currentTime = Math.floor(player.getCurrentTime());
+
+            // Jika user mencoba seek mundir atau maju melebihi batas sinkronisasi (2 detik)
+            if (Math.abs(currentTime - targetTime) > 2) {
+                forceSeekPlayer(targetTime);
+            }
+        }
+
+        function forceSeekPlayer(time) {
+            if (player && typeof player.seekTo === 'function') {
+                const curr = Math.floor(player.getCurrentTime());
+                if (Math.abs(curr - time) > 1) {
+                    player.seekTo(time, true);
+                }
+            }
+        }
+
+        function lockPlayerControls(lock) {
+            // Note: API iframe YouTube tidak mendukung disable seek bar secara penuh,
+            // tetapi kita menangkap aksi seek di onPlayerStateChange dan memaksanya kembali.
         }
 
         function exitCinema() {
-            if(player) player.stopVideo();
-            cinemaView.classList.remove('active');
-            clearInterval(playerCheckInterval);
+            cinemaView.classList.remove('active', 'lights-off');
+            cinemaView.style.backgroundColor = ''; // Reset
+            
+            if (player) { player.destroy(); player = null; }
+            if (dbRoomRef) { dbRoomRef.off(); dbRoomRef = null; }
+            roomData = null;
         }
 
-        function onPlayerReady(event) {
-            checkSchedule(); // Cek jadwal segera
-            playerCheckInterval = setInterval(checkSchedule, 1000);
-        }
-
-        function checkSchedule() {
-            if (!roomData || !player) return;
-
-            const now = Date.now();
-            const schedule = roomData.scheduleTime;
-            const diff = schedule - now;
-
-            const timerEl = document.getElementById('countdown-timer');
-
-            if (diff > 0) {
-                // Belum waktunya
-                const m = Math.floor(diff / 60000);
-                const s = Math.floor((diff % 60000) / 1000);
-                timerEl.innerText = `START IN: ${m}:${s < 10 ? '0'+s : s}`;
-                timerEl.style.color = "#ff0055";
-                
-                if (player.getPlayerState() === YT.PlayerState.PLAYING) {
-                    player.pauseVideo();
-                }
-            } else {
-                // Waktunya tayang
-                timerEl.innerText = "NOW PLAYING";
-                timerEl.style.color = "#00c851";
-                
-                // Sinkronisasi Waktu (Jika film telat masuk, seek ke detik yang sesuai)
-                const seekTime = Math.floor((now - schedule) / 1000);
-                
-                const state = player.getPlayerState();
-                if (state !== YT.PlayerState.PLAYING) {
-                    player.playVideo();
-                }
-                
-                // Pastikan posisi video benar (toleransi 2 detik)
-                const currentTime = player.getCurrentTime();
-                if (Math.abs(currentTime - seekTime) > 2) {
-                    player.seekTo(seekTime, true);
-                }
-            }
-        }
-
-        // --- AUTO CLEANUP LOGIC ---
-        // Jalankan saat app load untuk bersihkan room lama
-        function cleanOldRooms() {
-            const now = Date.now();
-            db.ref('rooms').once('value', snapshot => {
-                snapshot.forEach(child => {
-                    const room = child.val();
-                    // Hapus room yang dibuat > 48 jam (Safety net)
-                    if (room.createdAt && (now - room.createdAt > 48 * 60 * 60 * 1000)) {
-                        child.ref.remove();
-                    }
-                });
-            });
-        }
-        // Jalankan cleanup tiap 10 menit
-        setInterval(cleanOldRooms, 600000); 
-        cleanOldRooms(); // Init
-
-        // --- CHAT ---
+        // --- CHAT SYSTEM (FIREBASE REALTIME) ---
         function handleChat(e) {
             if (e.key === 'Enter') {
                 const input = document.getElementById('chat-msg');
                 const text = input.value.trim();
-                if (text) {
-                    addChatMessage('Anda', text);
-                    // Simpan ke Firebase Chat (Optional, di sini hanya lokal visual)
+                if (text && dbRoomRef) {
+                    dbRoomRef.child('chat').push({
+                        sender: myUsername,
+                        text: text,
+                        timestamp: firebase.database.ServerValue.TIMESTAMP
+                    });
                     input.value = '';
                 }
             }
+        }
+
+        // Listener Chat terpisah agar tidak bentrok dengan listener sync video
+        function startChatListener() {
+            dbRoomRef.child('chat').orderByChild('timestamp').limitToLast(50).on('child_added', snapshot => {
+                const msg = snapshot.val();
+                addChatMessage(msg.sender, msg.text);
+            });
         }
 
         function addChatMessage(sender, text) {
@@ -943,6 +780,43 @@
             box.appendChild(div);
             box.scrollTop = box.scrollHeight;
         }
+
+        function addSystemChat(text) {
+            const box = document.getElementById('chat-box');
+            const div = document.createElement('div');
+            div.className = 'chat-msg system';
+            div.innerText = text;
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        // Tambahkan listener chat saat masuk cinema (Modifikasi fungsi enterCinema sedikit)
+        const originalEnterCinema = enterCinema;
+        enterCinema = function(roomId, room) {
+            originalEnterCinema(roomId, room);
+            startChatListener();
+        };
+
+        const originalExitCinema = exitCinema;
+        exitCinema = function() {
+            if(dbRoomRef) dbRoomRef.child('chat').off();
+            originalExitCinema();
+        };
+
+        // --- AUTO CLEANUP ---
+        function cleanOldRooms() {
+            const now = Date.now();
+            db.ref('rooms').once('value', snapshot => {
+                snapshot.forEach(child => {
+                    const room = child.val();
+                    if (room.createdAt && (now - room.createdAt > 48 * 60 * 60 * 1000)) {
+                        child.ref.remove();
+                    }
+                });
+            });
+        }
+        setInterval(cleanOldRooms, 600000); 
+        cleanOldRooms();
 
     </script>
 </body>
