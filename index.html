@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ThMOvie (TMO) | Ad-Free Watch Party</title>
+    <title>ThMOvie (TMO) | Private Watch Party</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="icon" href="data:,">
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 
     <style>
         :root {
@@ -23,9 +22,6 @@
             --input-bg: #2a2a2a;
             --success: #00c851;
             --yellow: #ffeb3b;
-            --cyan: #00d4ff;
-            --purple: #9d4edd;
-            --cobalt: #3b82f6;
         }
 
         * { box-sizing: border-box; user-select: none; }
@@ -41,13 +37,8 @@
         }
         .btn:active { transform: scale(0.95); }
         .btn-primary { background: var(--accent-color); color: white; box-shadow: 0 4px 15px rgba(255,0,85,0.4); }
-        .btn-primary:hover { background: #ff1a6a; box-shadow: 0 6px 20px rgba(255,0,85,0.6); }
-        .btn-cobalt { background: var(--cobalt); color: white; box-shadow: 0 4px 15px rgba(59,130,246,0.4); }
-        .btn-cobalt:hover { background: #2563eb; }
         .btn-secondary { background: var(--card-bg); color: white; border: 1px solid var(--border-color); }
-        .btn-success { background: var(--success); color: white; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
+        
         /* Toast */
         #toast-container {
             position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
@@ -59,45 +50,7 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.5); animation: slideDown 0.3s ease-out;
             pointer-events: auto; font-size: 0.9rem;
         }
-        .toast.success { border-left-color: var(--success); }
-        .toast.error { border-left-color: #ff3333; }
-        .toast.cobalt { border-left-color: var(--cobalt); }
         @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-        /* Loading Overlay */
-        #loading-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); z-index: 1000; display: none;
-            flex-direction: column; align-items: center; justify-content: center;
-        }
-        #loading-overlay.active { display: flex; }
-        .loading-spinner {
-            width: 60px; height: 60px;
-            border: 4px solid #333; border-top-color: var(--cobalt);
-            border-radius: 50%; animation: spin 1s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .loading-text { color: white; margin-top: 20px; font-size: 1rem; }
-        .loading-progress {
-            width: 300px; height: 6px; background: #333; border-radius: 3px;
-            margin-top: 15px; overflow: hidden;
-        }
-        .loading-progress-bar {
-            height: 100%; background: var(--cobalt); width: 0%;
-            transition: width 0.3s; border-radius: 3px;
-        }
-
-        /* Database Stats Badge */
-        #db-stats {
-            position: fixed; top: 80px; right: 20px;
-            background: linear-gradient(135deg, var(--cobalt) 0%, #1d4ed8 100%);
-            color: white; padding: 10px 15px; border-radius: 8px;
-            font-size: 0.8rem; z-index: 100; cursor: pointer;
-            box-shadow: 0 4px 15px rgba(59,130,246,0.3);
-            transition: transform 0.2s;
-        }
-        #db-stats:hover { transform: scale(1.05); }
-        #db-stats.hidden { display: none; }
 
         /* View: LOBBY */
         #lobby-view { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
@@ -107,7 +60,7 @@
         }
         .logo { font-size: 1.5rem; font-weight: 700; letter-spacing: 1px; }
         .logo span { color: var(--accent-color); }
-        .logo span.cobalt { color: var(--cobalt); }
+        .rules-btn { font-size: 0.8rem; color: #888; cursor: pointer; text-decoration: underline; }
 
         .hero-section { padding: 20px; flex-shrink: 0; }
         .movie-card {
@@ -121,9 +74,6 @@
         .badge {
             position: absolute; top: 10px; right: 10px; background: var(--gold); color: #000;
             font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; font-weight: bold;
-        }
-        .badge-cobalt {
-            background: var(--cobalt); color: white;
         }
 
         .booking-actions { padding: 0 20px 15px 20px; display: flex; gap: 15px; flex-shrink: 0; }
@@ -143,6 +93,7 @@
             scroll-snap-type: x mandatory; position: relative; scroll-behavior: smooth;
         }
         .hallway-container::-webkit-scrollbar { display: none; }
+        .hallway-container { -ms-overflow-style: none; scrollbar-width: none; }
 
         .nav-arrow {
             position: absolute; top: 50%; transform: translateY(-50%); width: 40px; height: 40px;
@@ -151,9 +102,11 @@
             align-items: center; justify-content: center; cursor: pointer; z-index: 20;
             font-size: 1.5rem; transition: background 0.3s;
         }
-        .nav-arrow:hover { background: var(--accent-color); }
+        .nav-arrow:hover { background: var(--accent-color); border-color: var(--accent-color); }
         .nav-arrow.left { left: 10px; }
         .nav-arrow.right { right: 10px; }
+
+        @media (max-width: 768px) { .nav-arrow { display: none; } }
 
         .loket-column {
             min-width: 85vw; height: 100%; border-right: 1px solid #1a1a1a;
@@ -171,6 +124,8 @@
             display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
             grid-auto-rows: 100px; gap: 15px; align-content: start;
         }
+        .pintu-container::-webkit-scrollbar { width: 4px; }
+        .pintu-container::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
 
         .pintu-item {
             background: var(--card-bg); border: 2px solid var(--border-color); border-radius: 8px;
@@ -178,6 +133,7 @@
             cursor: pointer; transition: all 0.3s; position: relative;
         }
         .pintu-item:active { transform: scale(0.95); }
+        
         .pintu-item.occupied { 
             border-color: var(--yellow); 
             background: rgba(255, 235, 59, 0.15); 
@@ -197,65 +153,12 @@
 
         .form-group { margin-bottom: 20px; }
         .form-label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: #aaa; }
-        .form-label span { color: var(--cobalt); }
         .form-input, .form-select {
             width: 100%; padding: 14px; background: var(--input-bg); border: 1px solid var(--border-color);
             border-radius: 8px; color: white; font-family: inherit; outline: none;
         }
-        .form-input:focus { border-color: var(--cobalt); }
+        .form-input:focus { border-color: var(--accent-color); }
         .back-btn { background: transparent; color: #fff; padding: 10px; margin-bottom: 10px; font-size: 0.9rem; }
-
-        /* Video Cache Status */
-        .cache-status {
-            display: inline-flex; align-items: center; gap: 5px;
-            padding: 4px 10px; border-radius: 20px; font-size: 0.75rem;
-            margin-left: 10px;
-        }
-        .cache-status.cached {
-            background: rgba(0, 200, 81, 0.2); color: var(--success); border: 1px solid var(--success);
-        }
-        .cache-status.new {
-            background: rgba(59, 130, 246, 0.2); color: var(--cobalt); border: 1px solid var(--cobalt);
-        }
-
-        /* Video Info Display */
-        #video-info-display {
-            background: linear-gradient(135deg, #1e3a8a 0%, #1e1b4b 100%);
-            border: 1px solid var(--cobalt); border-radius: 12px;
-            padding: 20px; margin-bottom: 20px; display: none;
-        }
-        #video-info-display.active { display: block; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .video-preview-container { display: flex; gap: 15px; align-items: flex-start; }
-        .video-thumbnail {
-            width: 120px; height: 90px; border-radius: 8px; object-fit: cover; background: #333;
-        }
-        .video-details { flex: 1; }
-        .video-title-display { font-size: 1rem; font-weight: 600; color: var(--cyan); margin-bottom: 5px; }
-        .video-meta-display { font-size: 0.8rem; color: #888; margin-bottom: 3px; }
-        .video-meta-display span { color: var(--cobalt); font-weight: 600; }
-
-        /* Privacy Options */
-        .privacy-options {
-            background: var(--card-bg); border-radius: 12px; padding: 15px; margin-bottom: 20px;
-        }
-        .privacy-option {
-            display: flex; align-items: center; padding: 12px; margin-bottom: 10px;
-            background: var(--input-bg); border-radius: 8px; cursor: pointer;
-            transition: all 0.2s; border: 2px solid transparent;
-        }
-        .privacy-option:hover { background: #333; }
-        .privacy-option.selected { border-color: var(--cobalt); background: rgba(59,130,246,0.1); }
-        .privacy-option input[type="radio"] { margin-right: 12px; accent-color: var(--cobalt); }
-        .privacy-option-title { font-weight: 600; font-size: 0.9rem; display: block; }
-        .privacy-option-desc { font-size: 0.75rem; color: #888; display: block; margin-top: 2px; }
-        .dev-badge { background: var(--purple); color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; margin-left: 8px; }
-
-        /* Access Code Input */
-        #access-code-container { display: none; margin-top: 10px; }
-        #access-code-container.active { display: block; }
-        .code-input { flex: 1; text-align: center; font-size: 1.2rem; letter-spacing: 2px; }
 
         /* Printer Animation */
         #printer-overlay {
@@ -264,21 +167,32 @@
             align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.5s;
         }
         #printer-overlay.active { opacity: 1; pointer-events: auto; }
-        .printer-body { width: 280px; height: 40px; background: #333; border-radius: 4px; position: relative; z-index: 2; }
-        .printer-slot { width: 240px; height: 10px; background: #000; margin: 0 auto; position: relative; top: 30px; z-index: 1; }
+
+        .printer-body {
+            width: 280px; height: 40px; background: #333; border-radius: 4px;
+            position: relative; z-index: 2; box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+        .printer-slot {
+            width: 240px; height: 10px; background: #000; margin: 0 auto;
+            position: relative; top: 30px; z-index: 1;
+        }
         .ticket-paper {
             width: 220px; background: #fff; color: #000; padding: 15px; margin: 0 auto;
             position: absolute; top: 35px; left: 50%; transform: translateX(-50%);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3); font-family: 'Courier New', monospace;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3); font-family: 'Courier New', Courier, monospace;
             text-align: center; border-top: 2px dashed #ccc; opacity: 0;
         }
-        @keyframes printTicket { 0% { top: 40px; opacity: 1; } 100% { top: 400px; opacity: 1; } }
+        @keyframes printTicket {
+            0% { top: 40px; opacity: 1; }
+            100% { top: 400px; opacity: 1; }
+        }
         .printer-status { margin-top: 450px; color: white; font-size: 0.9rem; text-align: center; }
 
         /* Cinema View */
         #cinema-view {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #ffffff; z-index: 80; display: flex; flex-direction: column;
+            background: #ffffff; 
+            z-index: 80; display: flex; flex-direction: column;
             opacity: 0; pointer-events: none; transition: background-color 3s ease-in-out, opacity 0.5s;
         }
         #cinema-view.active { opacity: 1; pointer-events: auto; }
@@ -296,14 +210,16 @@
         
         .chat-msg { margin-bottom: 5px; background: #e0e0e0; color: #000; padding: 8px; border-radius: 6px; display: inline-block; max-width: 80%; word-wrap: break-word; transition: background 3s, color 3s;}
         #cinema-view.lights-off .chat-msg { background: #222; color: #fff; }
+        
         .chat-msg.system { color: #666; font-style: italic; display: block; font-size: 0.75rem; text-align: center; background: none !important; margin: 10px 0;}
+        #cinema-view.lights-off .chat-msg.system { color: #888; }
         
         .chat-input-area { padding: 10px; display: flex; border-top: 1px solid #ddd; background: #fff; transition: background 3s, border 3s;}
         #cinema-view.lights-off .chat-input-area { background: #0a0a0a; border-top: 1px solid #333; }
         
         .chat-input-area input { 
             flex: 1; background: #f0f0f0; border: 1px solid #ccc; color: #000; 
-            padding: 10px; border-radius: 20px; outline: none; font-family: inherit;
+            padding: 10px; border-radius: 20px; outline: none; font-family: inherit; transition: background 3s, color 3s, border 3s;
         }
         #cinema-view.lights-off .chat-input-area input { background: #222; border: 1px solid #444; color: #fff; }
         
@@ -323,31 +239,6 @@
         .waiting-text { color: #555; font-weight: 600; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 2px;}
         
         .player-wrapper { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 5; }
-        
-        /* Native Video Player (No YouTube) */
-        #native-player {
-            width: 100%; height: 100%; background: #000;
-            display: none;
-        }
-        #native-player.active { display: block; }
-        video { width: 100%; height: 100%; object-fit: contain; }
-
-        /* Ticket Badge */
-        #ticket-badge {
-            position: fixed; top: 20px; right: 20px;
-            background: linear-gradient(135deg, var(--gold) 0%, #ffed4e 100%);
-            color: #000; padding: 15px 20px; border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.4);
-            z-index: 90; transform: translateX(150%);
-            transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            font-weight: 600; min-width: 200px;
-        }
-        #ticket-badge.active { transform: translateX(0); }
-        #ticket-badge.hidden-badge { transform: translateX(150%); }
-        .ticket-badge-header { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.7; margin-bottom: 5px; }
-        .ticket-badge-content { font-size: 1.1rem; font-weight: 700; }
-        .ticket-badge-close { position: absolute; top: 5px; right: 8px; font-size: 1.2rem; cursor: pointer; opacity: 0.5; }
-        .ticket-badge-close:hover { opacity: 1; }
 
         /* Modal Rules */
         #rules-modal {
@@ -357,75 +248,19 @@
         }
         #rules-modal.open { opacity: 1; pointer-events: auto; }
         .rules-content { background: var(--card-bg); width: 90%; max-width: 400px; padding: 25px; border-radius: 12px; border: 1px solid var(--border-color); }
-        .rules-content h2 { margin-top: 0; color: var(--cobalt); }
+        .rules-content h2 { margin-top: 0; color: var(--accent-color); }
         .rules-list { padding-left: 20px; line-height: 1.6; font-size: 0.9rem; color: #ccc; }
         .close-rules { margin-top: 20px; width: 100%; }
-
-        /* Spinner */
-        .spinner {
-            width: 20px; height: 20px; border: 2px solid #333;
-            border-top-color: var(--cobalt); border-radius: 50%;
-            animation: spin 0.8s linear infinite; display: inline-block; margin-left: 10px;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* Verify Button */
-        .verify-btn {
-            background: var(--cobalt); color: white; border: none;
-            padding: 10px 20px; border-radius: 6px; cursor: pointer;
-            font-weight: 600; margin-top: 10px; width: 100%; transition: all 0.2s;
-        }
-        .verify-btn:hover { background: #2563eb; }
-        .verify-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        /* Movie Collection Grid */
-        #movie-collection {
-            padding: 20px; background: var(--bg-color);
-        }
-        .collection-header {
-            font-size: 1.2rem; color: var(--cobalt); margin-bottom: 15px;
-            display: flex; align-items: center; gap: 10px;
-        }
-        .movie-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 15px;
-        }
-        .movie-item {
-            background: var(--card-bg); border-radius: 8px; overflow: hidden;
-            cursor: pointer; transition: transform 0.2s; border: 1px solid var(--border-color);
-        }
-        .movie-item:hover { transform: scale(1.05); border-color: var(--cobalt); }
-        .movie-item-thumb { width: 100%; height: 100px; background-size: cover; background-position: center; }
-        .movie-item-info { padding: 10px; }
-        .movie-item-title { font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .movie-item-meta { font-size: 0.7rem; color: #888; margin-top: 3px; }
     </style>
 </head>
 <body>
 
     <div id="toast-container"></div>
-    <div id="db-stats" onclick="showMovieCollection()">🎬 <span id="cached-count">0</span> Film Tersedia</div>
-
-    <!-- Loading Overlay -->
-    <div id="loading-overlay">
-        <div class="loading-spinner"></div>
-        <div class="loading-text" id="loading-text">Mengecek database...</div>
-        <div class="loading-progress"><div class="loading-progress-bar" id="progress-bar"></div></div>
-    </div>
-
-    <!-- Ticket Badge -->
-    <div id="ticket-badge">
-        <span class="ticket-badge-close" onclick="hideTicketBadge()">×</span>
-        <div class="ticket-badge-header">Your Ticket</div>
-        <div class="ticket-badge-content">
-            Loket <span id="ticket-loket">-</span> | Pintu <span id="ticket-pintu">-</span>
-        </div>
-    </div>
 
     <!-- View: LOBBY -->
     <div id="lobby-view">
         <header>
-            <div class="logo">Th<span class="cobalt">MOvie</span> <span style="font-size:0.7rem; color:#3b82f6;">[AD-FREE]</span></div>
+            <div class="logo">Th<span>MOvie</span></div>
             <div class="rules-btn" onclick="toggleRules(true)">Rules</div>
         </header>
 
@@ -433,16 +268,16 @@
             <div class="movie-card">
                 <div class="movie-poster" style="background-image: url('https://picsum.photos/seed/movie1/200/300');"></div>
                 <div class="movie-info">
-                    <div class="badge badge-cobalt">COBALT POWERED</div>
+                    <div class="badge">REKOMENDASI</div>
                     <div class="movie-title">The Midnight Cinema</div>
-                    <div class="movie-meta">No Ads • HD Quality • Fast</div>
+                    <div class="movie-meta">Horror • Mystery • 1j 45m</div>
                 </div>
             </div>
         </div>
 
         <div class="booking-actions">
-            <button class="btn btn-cobalt" onclick="openCreateRoom()">🎬 BUAT ROOM</button>
-            <button class="btn btn-secondary" onclick="showToast('Pilih Pintu yang sudah TERISI untuk join!')">🚪 JOIN ROOM</button>
+            <button class="btn btn-primary" onclick="openCreateRoom()">BUAT ROOM</button>
+            <button class="btn btn-secondary" onclick="showToast('Silakan pilih Pintu di bawah untuk Join Room!')">JOIN ROOM</button>
         </div>
 
         <div class="hallway-label">← Geser untuk cari Loket & Pintu →</div>
@@ -457,67 +292,16 @@
     <!-- View: CREATE ROOM -->
     <div id="create-room-view">
         <button class="btn back-btn" onclick="closeCreateRoom()">← Kembali</button>
-        <h2 style="color: var(--cobalt); margin-top: 0;">Buat Ruang Nonton</h2>
+        <h2 style="color: var(--accent-color); margin-top: 0;">Buat Ruang Nonton</h2>
         
         <div class="form-group">
-            <label class="form-label">
-                Link Video YouTube 
-                <span class="cache-status new" id="cache-status">NEW</span>
-            </label>
-            <input type="text" id="room-video-url" class="form-input" placeholder="https://youtube.com/watch?v=..." onblur="checkVideoCache()">
-            <button class="verify-btn" id="verify-btn" onclick="verifyAndProcessVideo()">
-                <span id="verify-text">Verifikasi & Cek Database</span>
-                <span id="verify-spinner" class="spinner hidden"></span>
-            </button>
+            <label class="form-label">Link Video YouTube (Film Utama)</label>
+            <input type="text" id="room-video-url" class="form-input" placeholder="https://youtube.com/watch?v=...">
         </div>
-
-        <!-- Video Info Display -->
-        <div id="video-info-display">
-            <div class="video-preview-container">
-                <img id="video-thumbnail" class="video-thumbnail" src="" alt="Thumbnail">
-                <div class="video-details">
-                    <div class="video-title-display" id="video-title">-</div>
-                    <div class="video-meta-display">Channel: <span id="video-channel">-</span></div>
-                    <div class="video-meta-display">Durasi: <span id="video-duration">-</span></div>
-                    <div class="video-meta-display">Status: <span id="video-cache-info">-</span></div>
-                    <div class="video-meta-display">ID: <span id="video-id-display">-</span></div>
-                </div>
-            </div>
-        </div>
-
         <div class="form-group">
             <label class="form-label">Waktu Tayang (Jadwal)</label>
             <input type="datetime-local" id="room-time" class="form-input">
         </div>
-
-        <!-- Privacy Options -->
-        <div class="privacy-options">
-            <label class="form-label">Pengaturan Privasi</label>
-            
-            <div class="privacy-option selected" onclick="selectPrivacy('public')">
-                <input type="radio" name="privacy" value="public" checked>
-                <div class="privacy-option-label">
-                    <span class="privacy-option-title">🌐 Public</span>
-                    <span class="privacy-option-desc">Semua orang bisa melihat dan join</span>
-                </div>
-            </div>
-
-            <div class="privacy-option" onclick="selectPrivacy('private')">
-                <input type="radio" name="privacy" value="private">
-                <div class="privacy-option-label">
-                    <span class="privacy-option-title">🔒 Private</span>
-                    <span class="privacy-option-desc">Hanya yang punya kode akses bisa masuk</span>
-                </div>
-            </div>
-
-            <div id="access-code-container">
-                <label class="form-label">Kode Akses (4 digit)</label>
-                <div class="code-input-group">
-                    <input type="text" id="access-code" class="form-input code-input" maxlength="4" placeholder="0000" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,4)">
-                </div>
-            </div>
-        </div>
-
         <div class="form-group">
             <label class="form-label">Tipe Akun (Simulasi Tier)</label>
             <select id="room-tier" class="form-select">
@@ -530,9 +314,9 @@
             </select>
         </div>
         <div class="form-group">
-            <label class="form-label">Estimasi Kuota: <span id="quota-preview" style="color: var(--cobalt);">0</span> Kursi</label>
+            <label class="form-label">Estimasi Kuota: <span id="quota-preview" style="color: var(--accent-color);">0</span> Kursi</label>
         </div>
-        <button class="btn btn-cobalt" style="width: 100%; margin-top: 20px;" onclick="processBooking()">BOOKING SEKARANG</button>
+        <button class="btn btn-primary" style="width: 100%; margin-top: 20px;" onclick="processBooking()">BOOKING SEKARANG</button>
     </div>
 
     <!-- Overlay: Printer -->
@@ -553,14 +337,7 @@
                 <div class="timer-display" id="countdown-timer">--:--</div>
                 <div class="waiting-text">Menunggu Waktu Tayang</div>
             </div>
-            
-            <!-- Native Video Player (No YouTube/Ads) -->
-            <div id="native-player" class="player-wrapper">
-                <video id="video-element" controls></video>
-            </div>
-            
-            <!-- YouTube Fallback -->
-            <div class="player-wrapper hidden" id="yt-player-wrapper">
+            <div class="player-wrapper hidden" id="player-wrapper">
                 <div id="player"></div>
             </div>
         </div>
@@ -576,17 +353,16 @@
     <!-- Modal: Rules -->
     <div id="rules-modal">
         <div class="rules-content">
-            <h2>🛡️ Rules ThMOvie [AD-FREE Edition]</h2>
+            <h2>Rules ThMOvie</h2>
             <ul class="rules-list">
-                <li><strong>NO ADS GUARANTEE:</strong> Semua video diproses via cobalt.tools</li>
                 <li>Harap sopan di dalam chat room.</li>
                 <li>Room akan otomatis terhapus 24 jam setelah film selesai.</li>
                 <li>Jangan share link sensitif.</li>
                 <li>Max kapasitas tergantung Tier User.</li>
-                <li>Video akan play otomatis sesuai jadwal.</li>
-                <li>Film yang sudah di-cache akan load lebih cepat!</li>
+                <li>Video akan play otomatis sesuai jadwal yang ditentukan Admin Room.</li>
+                <li>Gunakan YouTube Link yang valid.</li>
             </ul>
-            <button class="btn btn-cobalt close-rules" onclick="toggleRules(false)">Saya Mengerti</button>
+            <button class="btn btn-primary close-rules" onclick="toggleRules(false)">Saya Mengerti</button>
         </div>
     </div>
 
@@ -599,22 +375,12 @@
             authDomain: "thmovie-3646f.firebaseapp.com",
             databaseURL: "https://thmovie-3646f-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "thmovie-3646f",
-            storageBucket: "thmovie-3646f.appspot.com", // Fixed storage bucket
+            storageBucket: "thmovie-3646f.firebasestorage.app",
             messagingSenderId: "1041137356432",
             appId: "1:1041137356432:web:96edbe3402937c82f09215"
         };
-        
-        // Initialize Firebase
-        let db, storage;
-        try {
-            firebase.initializeApp(firebaseConfig);
-            db = firebase.database();
-            storage = firebase.storage();
-            console.log("Firebase initialized successfully");
-        } catch (error) {
-            console.error("Firebase initialization error:", error);
-            showToast("Error: Gagal terhubung ke database", "error");
-        }
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
         // --- STATE VARIABLES ---
         let currentRoomId = null;
@@ -622,18 +388,11 @@
         let roomData = null;
         let dbRoomRef = null; 
         let myUsername = "User_" + Math.floor(Math.random() * 1000);
-        let currentVideoPhase = null;
-        let countdownInterval = null;
-        let verifiedVideoData = null;
-        let currentPrivacy = 'public';
-        let currentTicketData = null;
-        let isUsingNativePlayer = false;
-        let cachedVideoURL = null;
+        let currentVideoPhase = null; // Pelacak lokal: 'waiting', 'intro', 'main'
         
-        // Konstanta
+        // Konstanta Video
         const INTRO_VIDEO_ID = "9v1atEBmUIc";
-        const INTRO_DURATION_SEC = 15;
-        const COBALT_API = "https://api.cobalt.tools/api/json";
+        const INTRO_DURATION_SEC = 15; 
 
         // --- DOM ELEMENTS ---
         const createRoomView = document.getElementById('create-room-view');
@@ -643,51 +402,23 @@
         const quotaPreview = document.getElementById('quota-preview');
         const hallway = document.getElementById('hallway');
         const cinemaOverlayUi = document.getElementById('cinema-overlay-ui');
-        const nativePlayer = document.getElementById('native-player');
-        const videoElement = document.getElementById('video-element');
-        const ytPlayerWrapper = document.getElementById('yt-player-wrapper');
-        const ticketBadge = document.getElementById('ticket-badge');
-        const loadingOverlay = document.getElementById('loading-overlay');
+        const playerWrapper = document.getElementById('player-wrapper');
 
         // --- INIT ---
         window.onload = function() {
             generateHallway();
             updateQuotaPreview();
             setupDateTimeInputMin();
-            updateCachedMovieCount();
-            
-            if (db) {
-                db.ref('.info/connected').on('value', (snap) => {
-                    if (snap.val() === true) console.log("Connected to Firebase");
-                });
-            }
         };
 
         // --- UI FUNCTIONS ---
-        function showToast(msg, type = 'default') {
+        function showToast(msg) {
             const container = document.getElementById('toast-container');
             const el = document.createElement('div');
             el.className = 'toast';
-            if (type === 'success') el.classList.add('success');
-            if (type === 'error') el.classList.add('error');
-            if (type === 'cobalt') el.classList.add('cobalt');
             el.innerText = msg;
             container.appendChild(el);
-            setTimeout(() => {
-                el.style.opacity = '0';
-                setTimeout(() => el.remove(), 300);
-            }, 3000);
-        }
-
-        function showLoading(text, progress = 0) {
-            document.getElementById('loading-text').textContent = text;
-            document.getElementById('progress-bar').style.width = progress + '%';
-            loadingOverlay.classList.add('active');
-        }
-
-        function hideLoading() {
-            loadingOverlay.classList.remove('active');
-            document.getElementById('progress-bar').style.width = '0%';
+            setTimeout(() => el.remove(), 3000);
         }
 
         function toggleRules(show) {
@@ -695,263 +426,21 @@
         }
 
         function openCreateRoom() { createRoomView.classList.add('active'); }
-        
-        function closeCreateRoom() { 
-            createRoomView.classList.remove('active'); 
-            document.getElementById('room-video-url').value = '';
-            document.getElementById('video-info-display').classList.remove('active');
-            document.getElementById('cache-status').className = 'cache-status new';
-            document.getElementById('cache-status').textContent = 'NEW';
-            verifiedVideoData = null;
-            cachedVideoURL = null;
-            selectPrivacy('public');
-        }
+        function closeCreateRoom() { createRoomView.classList.remove('active'); }
 
         function scrollHallway(direction) {
             hallway.scrollBy({ left: hallway.clientWidth * 0.85 * direction, behavior: 'smooth' });
         }
 
-        // --- VIDEO CACHE SYSTEM (COBALT INTEGRATION) ---
-        
-        function extractVideoID(url) {
-            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-            const match = url.match(regExp);
-            return (match && match[2].length === 11) ? match[2] : null;
-        }
-
-        function getVideoHash(videoId) {
-            // Create a simple hash for deduplication
-            return btoa(videoId).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
-        }
-
-        async function checkVideoCache() {
-            const url = document.getElementById('room-video-url').value.trim();
-            const videoId = extractVideoID(url);
-            if (!videoId) return;
-
-            const cacheStatus = document.getElementById('cache-status');
-            cacheStatus.textContent = 'CHECKING...';
-            
-            try {
-                // Check if video exists in Firebase
-                const snapshot = await db.ref('video_cache/' + videoId).once('value');
-                const cachedData = snapshot.val();
-                
-                if (cachedData && cachedData.downloadUrl) {
-                    cacheStatus.className = 'cache-status cached';
-                    cacheStatus.textContent = 'CACHED ✓';
-                    cachedVideoURL = cachedData.downloadUrl;
-                    showToast('Video sudah ada di database! Load instan.', 'success');
-                    return true;
-                } else {
-                    cacheStatus.className = 'cache-status new';
-                    cacheStatus.textContent = 'NEW (Will use cobalt.tools)';
-                    return false;
-                }
-            } catch (error) {
-                console.error("Cache check error:", error);
-                return false;
-            }
-        }
-
-        async function verifyAndProcessVideo() {
-            const urlInput = document.getElementById('room-video-url').value.trim();
-            const videoId = extractVideoID(urlInput);
-            
-            if (!videoId) {
-                showToast("Format URL YouTube tidak valid!", "error");
-                return;
-            }
-
-            const verifyBtn = document.getElementById('verify-btn');
-            const spinner = document.getElementById('verify-spinner');
-            const verifyText = document.getElementById('verify-text');
-            
-            verifyBtn.disabled = true;
-            spinner.classList.remove('hidden');
-            verifyText.textContent = 'Mengecek database...';
-
-            try {
-                // Step 1: Check if already in Firebase
-                const cacheSnapshot = await db.ref('video_cache/' + videoId).once('value');
-                const cachedData = cacheSnapshot.val();
-
-                if (cachedData && cachedData.downloadUrl) {
-                    // Video already cached!
-                    verifiedVideoData = {
-                        id: videoId,
-                        title: cachedData.title,
-                        channel: cachedData.channel,
-                        thumbnail: cachedData.thumbnail,
-                        duration: cachedData.duration,
-                        downloadUrl: cachedData.downloadUrl,
-                        isCached: true
-                    };
-                    
-                    updateVideoInfoUI(verifiedVideoData, true);
-                    showToast('Video ditemukan di database! Siap diputar.', 'success');
-                    verifyText.textContent = '✓ Tersedia di Database';
-                } else {
-                    // Step 2: Fetch from YouTube oEmbed for metadata
-                    verifyText.textContent = 'Mengambil metadata...';
-                    const oembedRes = await fetch(`https://youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`);
-                    const oembedData = await oembedRes.json();
-
-                    // Step 3: Call cobalt.tools API
-                    verifyText.textContent = 'Memproses via cobalt.tools...';
-                    showLoading('Mengirim ke cobalt.tools...', 30);
-                    
-                    const cobaltRes = await fetch(COBALT_API, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                        body: JSON.stringify({
-                            url: `https://www.youtube.com/watch?v=${videoId}`,
-                            isAudioOnly: false,
-                            filenamePattern: 'basic'
-                        })
-                    });
-                    
-                    hideLoading();
-                    
-                    if (!cobaltRes.ok) throw new Error('Cobalt API failed');
-                    
-                    const cobaltData = await cobaltRes.json();
-                    
-                    if (cobaltData.status === 'error') {
-                        throw new Error(cobaltData.text || 'Download failed');
-                    }
-
-                    // Handle different cobalt response types
-                    let downloadUrl = null;
-                    if (cobaltData.url) {
-                        downloadUrl = cobaltData.url;
-                    } else if (cobaltData.picker && cobaltData.picker[0]) {
-                        downloadUrl = cobaltData.picker[0].url;
-                    }
-
-                    if (!downloadUrl) {
-                        throw new Error('No download URL received');
-                    }
-
-                    verifiedVideoData = {
-                        id: videoId,
-                        title: oembedData.title,
-                        channel: oembedData.author_name,
-                        thumbnail: oembedData.thumbnail_url,
-                        duration: 'N/A',
-                        downloadUrl: downloadUrl,
-                        isCached: false,
-                        cobaltData: cobaltData
-                    };
-
-                    // Save to Firebase for future use
-                    await saveVideoToCache(videoId, verifiedVideoData);
-                    
-                    updateVideoInfoUI(verifiedVideoData, false);
-                    showToast('Video berhasil diproses via cobalt.tools!', 'cobalt');
-                    verifyText.textContent = '✓ Berhasil di-cache';
-                }
-                
-            } catch (error) {
-                console.error("Verification error:", error);
-                hideLoading();
-                showToast('Gagal: ' + error.message, 'error');
-                verifyText.textContent = 'Coba Lagi';
-            } finally {
-                verifyBtn.disabled = false;
-                spinner.classList.add('hidden');
-            }
-        }
-
-        async function saveVideoToCache(videoId, videoData) {
-            try {
-                showLoading('Menyimpan ke database...', 80);
-                
-                // Save metadata to Realtime DB
-                await db.ref('video_cache/' + videoId).set({
-                    title: videoData.title,
-                    channel: videoData.channel,
-                    thumbnail: videoData.thumbnail,
-                    duration: videoData.duration,
-                    downloadUrl: videoData.downloadUrl,
-                    cachedAt: firebase.database.ServerValue.TIMESTAMP,
-                    videoId: videoId
-                });
-
-                // Also add to movie collection
-                await db.ref('movie_collection/' + videoId).set({
-                    title: videoData.title,
-                    thumbnail: videoData.thumbnail,
-                    channel: videoData.channel,
-                    addedAt: firebase.database.ServerValue.TIMESTAMP,
-                    videoId: videoId
-                });
-
-                hideLoading();
-                updateCachedMovieCount();
-                showToast('Film tersimpan di koleksi!', 'success');
-            } catch (error) {
-                console.error("Save cache error:", error);
-                hideLoading();
-            }
-        }
-
-        function updateVideoInfoUI(data, isCached) {
-            document.getElementById('video-title').textContent = data.title;
-            document.getElementById('video-channel').textContent = data.channel;
-            document.getElementById('video-duration').textContent = data.duration || 'N/A';
-            document.getElementById('video-id-display').textContent = data.id;
-            document.getElementById('video-thumbnail').src = data.thumbnail;
-            document.getElementById('video-cache-info').textContent = isCached ? '✓ Tersedia di Database (Instant)' : '✓ Di-cache via cobalt.tools';
-            document.getElementById('video-info-display').classList.add('active');
-        }
-
-        async function updateCachedMovieCount() {
-            try {
-                const snapshot = await db.ref('video_cache').once('value');
-                const count = snapshot.val() ? Object.keys(snapshot.val()).length : 0;
-                document.getElementById('cached-count').textContent = count;
-                if (count > 0) {
-                    document.getElementById('db-stats').classList.remove('hidden');
-                }
-            } catch (e) {
-                console.log("Count error:", e);
-            }
-        }
-
-        function showMovieCollection() {
-            // Navigate to movie collection view (can be implemented)
-            showToast('Koleksi Film: ' + document.getElementById('cached-count').textContent + ' film tersedia', 'cobalt');
-        }
-
-        // --- PRIVACY OPTIONS ---
-        function selectPrivacy(type) {
-            currentPrivacy = type;
-            document.querySelectorAll('.privacy-option').forEach(opt => {
-                opt.classList.remove('selected');
-                opt.querySelector('input').checked = false;
-            });
-            
-            const selectedOption = document.querySelector(`input[value="${type}"]`).closest('.privacy-option');
-            selectedOption.classList.add('selected');
-            selectedOption.querySelector('input').checked = true;
-            
-            const codeContainer = document.getElementById('access-code-container');
-            codeContainer.classList.toggle('active', type === 'private');
-        }
-
         // --- HALLWAY & ROOM LOGIC ---
         function generateHallway() {
             let html = '';
-            const totalLoket = 6;
-            const roomsPerLoket = 10;
-            
-            for (let l = 1; l <= totalLoket; l++) {
+            for (let l = 1; l <= 4; l++) {
                 html += `<div class="loket-column">
                             <div class="loket-header">LOKET ${l}</div>
                             <div class="pintu-container">`;
-                let startPintu = ((l-1) * roomsPerLoket) + 1;
-                for (let p = 0; p < roomsPerLoket; p++) {
+                let startPintu = ((l-1) * 5) + 1;
+                for (let p = 0; p < 5; p++) {
                     let pintuNum = startPintu + p;
                     html += `<div class="pintu-item" id="door-${l}-${pintuNum}" onclick="tryJoinRoom(${l}, ${pintuNum})">
                                 <div class="pintu-number">${pintuNum}</div>
@@ -965,8 +454,6 @@
         }
 
         function listenToRooms() {
-            if (!db) return;
-            
             db.ref('rooms').on('value', (snapshot) => {
                 document.querySelectorAll('.pintu-item').forEach(el => {
                     el.classList.remove('occupied');
@@ -978,48 +465,30 @@
 
                 Object.keys(rooms).forEach(key => {
                     const room = rooms[key];
-                    if (room.loket && room.pintu) {
-                        const doorId = `door-${room.loket}-${room.pintu}`;
-                        const el = document.getElementById(doorId);
-                        if (el) {
-                            el.classList.add('occupied');
-                            el.querySelector('.pintu-status').innerText = "TERISI";
-                        }
+                    const doorId = `door-${room.loket}-${room.pintu}`;
+                    const el = document.getElementById(doorId);
+                    if (el) {
+                        el.classList.add('occupied');
+                        el.querySelector('.pintu-status').innerText = "TERISI";
                     }
                 });
-            }, (error) => {
-                console.error("Firebase listen error:", error);
             });
         }
 
         function tryJoinRoom(loket, pintu) {
-            if (!db) return showToast("Database tidak tersedia", "error");
-            
             showToast(`Mengecek Loket ${loket} Pintu ${pintu}...`);
             
-            db.ref('rooms').orderByChild('loket').equalTo(loket).once('value')
-                .then(snapshot => {
-                    let found = false;
-                    snapshot.forEach(childSnapshot => {
-                        const room = childSnapshot.val();
-                        if (room.pintu === pintu) {
-                            found = true;
-                            if (room.privacy === 'private') {
-                                const code = prompt("Room ini private. Masukkan kode akses (4 digit):");
-                                if (code !== room.accessCode) {
-                                    showToast("Kode akses salah!", "error");
-                                    return;
-                                }
-                            }
-                            enterCinema(childSnapshot.key, room);
-                        }
-                    });
-                    if (!found) showToast("Pintu ini kosong / Belum ada room.");
-                })
-                .catch(error => {
-                    console.error("Join room error:", error);
-                    showToast("Gagal memeriksa room", "error");
+            db.ref('rooms').orderByChild('loket').equalTo(loket).once('value', snapshot => {
+                let found = false;
+                snapshot.forEach(childSnapshot => {
+                    const room = childSnapshot.val();
+                    if (room.pintu === pintu) {
+                        found = true;
+                        enterCinema(childSnapshot.key, room);
+                    }
                 });
+                if (!found) showToast("Pintu ini kosong / Belum ada room.");
+            });
         }
 
         // --- CREATE ROOM LOGIC ---
@@ -1044,57 +513,38 @@
             return Math.floor(Math.random() * (max - min + 1)) + min;
         }
 
+        function extractVideoID(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
         function processBooking() {
             const urlInput = document.getElementById('room-video-url').value.trim();
             const timeInput = document.getElementById('room-time').value;
             const tier = document.getElementById('room-tier').value;
 
-            if (!urlInput || !timeInput) return showToast("Mohon lengkapi semua field!", "error");
-            if (!verifiedVideoData) return showToast("Silakan verifikasi video terlebih dahulu!", "error");
+            if (!urlInput || !timeInput) return showToast("Mohon lengkapi URL Video dan Waktu Tayang!");
+            
+            const videoId = extractVideoID(urlInput);
+            if (!videoId) return showToast("Format URL YouTube tidak valid!");
 
-            const rLoket = Math.floor(Math.random() * 6) + 1;
-            const roomsPerLoket = 10;
-            const startP = ((rLoket-1) * roomsPerLoket) + 1;
-            const rPintu = Math.floor(Math.random() * roomsPerLoket) + startP;
+            const rLoket = Math.floor(Math.random() * 4) + 1;
+            const startP = ((rLoket-1) * 5) + 1;
+            const rPintu = Math.floor(Math.random() * 5) + startP;
             const capacity = getCapacity(tier);
             const scheduleTime = new Date(timeInput).getTime();
-            
-            const privacy = currentPrivacy;
-            const accessCode = privacy === 'private' ? document.getElementById('access-code').value : null;
-            
-            if (privacy === 'private' && (!accessCode || accessCode.length !== 4)) {
-                return showToast("Kode akses harus 4 digit!", "error");
-            }
 
             const newRoomRef = db.ref('rooms').push();
             const roomObj = {
-                loket: rLoket, 
-                pintu: rPintu, 
-                videoId: verifiedVideoData.id,
-                videoTitle: verifiedVideoData.title,
-                videoUrl: verifiedVideoData.downloadUrl, // Direct MP4 URL!
-                isCached: verifiedVideoData.isCached,
-                capacity: capacity,
-                scheduleTime: scheduleTime, 
-                createdAt: firebase.database.ServerValue.TIMESTAMP,
-                status: 'waiting', 
-                currentPlayTime: 0, 
-                isPlayingIntro: false, 
-                phase: 'waiting',
-                privacy: privacy,
-                accessCode: accessCode,
-                hostUsername: myUsername
+                loket: rLoket, pintu: rPintu, videoId: videoId, capacity: capacity,
+                scheduleTime: scheduleTime, createdAt: firebase.database.ServerValue.TIMESTAMP,
+                status: 'waiting', currentPlayTime: 0, isPlayingIntro: false, phase: 'waiting'
             };
 
-            newRoomRef.set(roomObj)
-                .then(() => {
-                    currentTicketData = { loket: rLoket, pintu: rPintu, capacity: capacity };
-                    startPrintingAnimation(capacity, roomObj);
-                })
-                .catch(err => {
-                    console.error("Create room error:", err);
-                    showToast("Gagal membuat room: " + err.message, "error");
-                });
+            newRoomRef.set(roomObj).then(() => {
+                startPrintingAnimation(capacity, roomObj);
+            }).catch(err => showToast("Gagal membuat room: " + err.message));
         }
 
         // --- ANIMASI TIKET ---
@@ -1109,8 +559,7 @@
                 if (printed >= ticketsToPrint) {
                     setTimeout(() => {
                         printerOverlay.classList.remove('active');
-                        showTicketBadge(roomObj.loket, roomObj.pintu);
-                        showToast(`Room Siap! Masuk ke Loket ${roomObj.loket} Pintu ${roomObj.pintu}`, "success");
+                        showToast(`Room Siap! Masuk ke Loket ${roomObj.loket} Pintu ${roomObj.pintu}`);
                     }, 1000);
                     return;
                 }
@@ -1118,10 +567,10 @@
                 ticket.className = 'ticket-paper';
                 ticket.innerHTML = `
                     <h3 style="margin:0">TMO CINEMA</h3>
-                    <div style="font-size:0.8rem; margin:5px 0;">AD-FREE TICKET</div>
+                    <div style="font-size:0.8rem; margin:5px 0;">ACCESS TICKET</div>
                     <div style="font-weight:bold; font-size:1.1rem;">LOKET ${roomObj.loket} - PINTU ${roomObj.pintu}</div>
                     <div style="border-top:1px dashed #999; margin-top:8px; padding-top:5px; font-size:0.6rem;">
-                        Kapasitas: ${capacity} Org<br>No Ads Guarantee!
+                        Kapasitas: ${capacity} Org<br>Enjoy Movie!
                     </div>`;
                 ticket.style.animation = `printTicket 2s linear forwards`;
                 ticketStack.appendChild(ticket);
@@ -1131,74 +580,40 @@
             printNext();
         }
 
-        // --- TICKET BADGE ---
-        function showTicketBadge(loket, pintu) {
-            document.getElementById('ticket-loket').textContent = loket;
-            document.getElementById('ticket-pintu').textContent = pintu;
-            ticketBadge.classList.add('active');
-            ticketBadge.classList.remove('hidden-badge');
-        }
-
-        function hideTicketBadge() {
-            ticketBadge.classList.remove('active');
-            ticketBadge.classList.add('hidden-badge');
-        }
-
         // --- CINEMA PLAYER & SYNC LOGIC ---
 
         function enterCinema(roomId, room) {
             currentRoomId = roomId;
             roomData = room;
             dbRoomRef = db.ref('rooms/' + roomId);
-            currentVideoPhase = null;
-            isUsingNativePlayer = false;
-            
-            hideTicketBadge();
+            currentVideoPhase = null; // Reset phase lokal
             
             document.getElementById('cinema-loket').innerText = room.loket;
             document.getElementById('cinema-pintu').innerText = room.pintu;
             
+            // SET TAMPILAN AWAL (LAMPU NYALA - PUTIH)
             cinemaView.classList.remove('lights-off');
             cinemaOverlayUi.classList.remove('hidden');
-            nativePlayer.classList.remove('active');
-            ytPlayerWrapper.classList.add('hidden');
+            playerWrapper.classList.add('hidden');
             document.getElementById('chat-box').innerHTML = '';
 
             cinemaView.classList.add('active');
 
-            addSystemChat("🎬 Selamat datang di ThMOvie [AD-FREE]!");
-            addSystemChat("✅ Video diputar langsung dari server (No YouTube Ads!)");
-            addSystemChat("💡 REKOMENDASI: Gunakan headset & WiFi stabil");
+            // Tampilkan Rekomendasi UX di Chat
+            addSystemChat("🎬 Selamat datang di ThMOvie Private Watch Party!");
+            addSystemChat("💡 REKOMENDASI UX:");
+            addSystemChat("1. Gunakan HEADSET untuk pengalaman suara terbaik.");
+            addSystemChat("2. Naikan volume HP/PC Anda ke 89% atau lebih.");
+            addSystemChat("3. Gunakan koneksi WiFi yang stabil.");
 
-            dbRoomRef.on('value', handleDatabaseUpdate, (error) => {
-                console.error("Cinema DB error:", error);
-                showToast("Koneksi terputus", "error");
-            });
+            // Hanya 1 listener value utama untuk menghindari bentrokan update
+            dbRoomRef.on('value', handleDatabaseUpdate);
             
+            // Listener Chat terpisah
             dbRoomRef.child('chat').orderByChild('timestamp').limitToLast(50).on('child_added', snapshot => {
                 const msg = snapshot.val();
-                if (msg) addChatMessage(msg.sender, msg.text);
+                addChatMessage(msg.sender, msg.text);
             });
-            
-            if (countdownInterval) clearInterval(countdownInterval);
-            countdownInterval = setInterval(() => {
-                if (roomData && roomData.scheduleTime && currentVideoPhase === 'waiting') {
-                    updateCountdownDisplay();
-                }
-            }, 1000);
-        }
-
-        function updateCountdownDisplay() {
-            const now = Date.now();
-            const schedule = roomData.scheduleTime;
-            const diff = schedule - now;
-            
-            if (diff > 0) {
-                const m = Math.floor(diff / 60000);
-                const s = Math.floor((diff % 60000) / 1000);
-                document.getElementById('countdown-timer').innerText = 
-                    `${m}:${s < 10 ? '0'+s : s}`;
-            }
         }
 
         function handleDatabaseUpdate(snapshot) {
@@ -1210,122 +625,124 @@
             const schedule = data.scheduleTime;
             const serverPhase = data.phase || 'waiting';
 
-            // FASE 0: WAITING
+            // ------------------------------
+            // FASE 0: HITUNG MUNDUR (WAITING)
+            // ------------------------------
             if (now < schedule) {
                 if (currentVideoPhase !== 'waiting') {
                     currentVideoPhase = 'waiting';
                     cinemaView.classList.remove('lights-off');
                     cinemaOverlayUi.classList.remove('hidden');
-                    nativePlayer.classList.remove('active');
-                    ytPlayerWrapper.classList.add('hidden');
-                    stopVideo();
+                    playerWrapper.classList.add('hidden');
+                    if (player) { player.destroy(); player = null; }
                 }
-                updateCountdownDisplay();
+                const diff = schedule - now;
+                const m = Math.floor(diff / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
+                document.getElementById('countdown-timer').innerText = `${m}:${s < 10 ? '0'+s : s}`;
                 return;
             }
 
+            // ------------------------------
             // FASE 1: INTRO
+            // ------------------------------
             if (serverPhase === 'intro') {
                 if (currentVideoPhase !== 'intro') {
                     currentVideoPhase = 'intro';
-                    cinemaView.classList.add('lights-off');
+                    cinemaView.classList.add('lights-off'); // Matikan lampu pelan-pelan
                     cinemaOverlayUi.classList.add('hidden');
-                    playIntro();
+                    playerWrapper.classList.remove('hidden');
+                    
+                    if (player) player.destroy();
+                    player = createYTPlayer(INTRO_VIDEO_ID);
                 }
                 return;
             }
 
-            // FASE 2: MAIN VIDEO (AD-FREE!)
+            // ------------------------------
+            // FASE 2: FILM UTAMA
+            // ------------------------------
             if (serverPhase === 'main') {
+                // Hitung waktu seharusnya berdasarkan real-time clock
                 const expectedTime = Math.max(0, Math.floor((now - schedule - (INTRO_DURATION_SEC * 1000)) / 1000));
 
                 if (currentVideoPhase !== 'main') {
                     currentVideoPhase = 'main';
                     cinemaView.classList.add('lights-off');
                     cinemaOverlayUi.classList.add('hidden');
-                    playMainVideo(data.videoUrl, expectedTime);
+                    playerWrapper.classList.remove('hidden');
+                    
+                    if (player) player.destroy();
+                    // Load film langsung ke posisi yang benar
+                    player = createYTPlayerAtTime(data.videoId, expectedTime);
                 } else {
-                    syncVideoTime(expectedTime);
+                    // Jika player sudah ada, lakukan sinkronisasi keras setiap 2 detik
+                    if (player && player.getCurrentTime) {
+                        const currTime = Math.floor(player.getCurrentTime());
+                        if (Math.abs(currTime - expectedTime) > 2) {
+                            player.seekTo(expectedTime, true);
+                        }
+                        if (player.getPlayerState() !== YT.PlayerState.PLAYING) {
+                            player.playVideo();
+                        }
+                    }
                 }
 
+                // HANYA UPDATE DB JIKA ANDA USER PALING AKTIF YANG MENJALANKAN FILM PERTAMA KALI
+                // (Cegah 50 user saling menimpa waktu dan menyebabkan bug)
                 if (data.currentPlayTime < 1) {
-                    dbRoomRef.update({ currentPlayTime: expectedTime })
-                        .catch(err => console.log("Update playtime error:", err));
+                    dbRoomRef.update({ currentPlayTime: expectedTime });
                 }
             }
         }
 
-        function playIntro() {
-            // Use native player for intro MP4 or fallback to YouTube
-            nativePlayer.classList.add('active');
-            ytPlayerWrapper.classList.add('hidden');
-            
-            // For intro, we can use a local MP4 or YouTube
-            // Here using YouTube iframe for intro as before
-            nativePlayer.classList.remove('active');
-            ytPlayerWrapper.classList.remove('hidden');
-            
-            if (player) player.destroy();
-            player = new YT.Player('player', {
-                height: '100%', width: '100%', videoId: INTRO_VIDEO_ID,
-                playerVars: { 'autoplay': 1, 'controls': 0, 'rel': 0 },
-                events: { 'onReady': (e) => e.target.playVideo() }
+        function createYTPlayer(videoId) {
+            return new YT.Player('player', {
+                height: '100%', width: '100%', videoId: videoId,
+                playerVars: { 
+                    'autoplay': 1, 'controls': 1, 'rel': 0, 
+                    'disablekb': 1, 'modestbranding': 1, 'iv_load_policy': 3 
+                },
+                events: { 
+                    'onReady': (e) => e.target.playVideo(),
+                    'onStateChange': onPlayerStateChange
+                }
             });
-            isUsingNativePlayer = false;
         }
 
-        function playMainVideo(videoUrl, startTime) {
-            // STOP YouTube player if exists
-            if (player) {
-                try { player.destroy(); } catch(e) {}
-                player = null;
-            }
-            
-            ytPlayerWrapper.classList.add('hidden');
-            nativePlayer.classList.add('active');
-            
-            // Use native HTML5 video player (NO ADS!)
-            videoElement.src = videoUrl;
-            videoElement.currentTime = startTime;
-            videoElement.play().catch(e => console.log("Autoplay prevented:", e));
-            
-            isUsingNativePlayer = true;
-            
-            addSystemChat("▶️ Memutar video tanpa iklan!");
+        function createYTPlayerAtTime(videoId, startTime) {
+            return new YT.Player('player', {
+                height: '100%', width: '100%', videoId: videoId,
+                playerVars: { 
+                    'autoplay': 1, 'controls': 1, 'rel': 0, 
+                    'disablekb': 1, 'modestbranding': 1, 'iv_load_policy': 3,
+                    'start': startTime 
+                },
+                events: { 
+                    'onReady': (e) => e.target.playVideo(),
+                    'onStateChange': onPlayerStateChange
+                }
+            });
         }
 
-        function syncVideoTime(expectedTime) {
-            if (!isUsingNativePlayer) return;
+        // MENCEGAH USER MEMUTAR MUNDIR/MEMPERCEPAT
+        function onPlayerStateChange(event) {
+            if (!roomData || currentVideoPhase !== 'main') return;
             
-            const currentTime = videoElement.currentTime;
-            if (Math.abs(currentTime - expectedTime) > 2) {
-                videoElement.currentTime = expectedTime;
-            }
-            if (videoElement.paused) {
-                videoElement.play().catch(e => console.log("Play error:", e));
-            }
-        }
+            // Gunakan Realtime clock, BUKAN data.currentPlayTime dari DB untuk menghindari delay
+            const now = Date.now();
+            const expectedTime = Math.max(0, Math.floor((now - roomData.scheduleTime - (INTRO_DURATION_SEC * 1000)) / 1000));
+            const currentTime = Math.floor(player.getCurrentTime());
 
-        function stopVideo() {
-            if (isUsingNativePlayer) {
-                videoElement.pause();
-                videoElement.src = '';
-            } else if (player) {
-                try { player.destroy(); } catch(e) {}
-                player = null;
+            if (Math.abs(currentTime - expectedTime) > 3) {
+                player.seekTo(expectedTime, true);
             }
         }
 
         function exitCinema() {
             cinemaView.classList.remove('active', 'lights-off');
             
-            if (countdownInterval) {
-                clearInterval(countdownInterval);
-                countdownInterval = null;
-            }
-            
-            stopVideo();
-            
+            if (player) { player.destroy(); player = null; }
             if (dbRoomRef) { 
                 dbRoomRef.off(); 
                 dbRoomRef.child('chat').off();
@@ -1333,8 +750,6 @@
             }
             roomData = null;
             currentVideoPhase = null;
-            currentRoomId = null;
-            isUsingNativePlayer = false;
         }
 
         // --- CHAT SYSTEM ---
@@ -1347,7 +762,7 @@
                         sender: myUsername,
                         text: text,
                         timestamp: firebase.database.ServerValue.TIMESTAMP
-                    }).catch(err => console.log("Chat send error:", err));
+                    });
                     input.value = '';
                 }
             }
@@ -1371,45 +786,37 @@
             box.scrollTop = box.scrollHeight;
         }
 
-        // --- SERVER CRON ---
+        // --- SERVER SIDE CRON (MENJALANKAN PHASE SECARA OTOMATIS TANPA HARUS USER PERTAMA ONLINE) ---
+        // Ini memastikan jika user terlambat masuk, database sudah otomatis berpindah phase
         setInterval(() => {
-            if (!db) return;
-            
             const now = Date.now();
-            db.ref('rooms').once('value')
-                .then(snapshot => {
-                    if (!snapshot.val()) return;
-                    snapshot.forEach(child => {
-                        const room = child.val();
-                        if (room.phase === 'waiting' && now >= room.scheduleTime) {
-                            child.ref.update({ phase: 'intro', isPlayingIntro: true })
-                                .catch(err => console.log("Phase update error:", err));
-                        } else if (room.phase === 'intro' && (now - room.scheduleTime) >= (INTRO_DURATION_SEC * 1000)) {
-                            const mainTime = Math.floor((now - room.scheduleTime - (INTRO_DURATION_SEC * 1000)) / 1000);
-                            child.ref.update({ phase: 'main', isPlayingIntro: false, currentPlayTime: mainTime })
-                                .catch(err => console.log("Phase update error:", err));
-                        }
-                    });
-                })
-                .catch(err => console.log("Cron error:", err));
-        }, 3000);
+            db.ref('rooms').once('value', snapshot => {
+                if (!snapshot.val()) return;
+                snapshot.forEach(child => {
+                    const room = child.val();
+                    if (room.phase === 'waiting' && now >= room.scheduleTime) {
+                        // Waktu habis, mulai intro
+                        child.ref.update({ phase: 'intro', isPlayingIntro: true });
+                    } else if (room.phase === 'intro' && (now - room.scheduleTime) >= (INTRO_DURATION_SEC * 1000)) {
+                        // Intro selesai, mulai film utama
+                        const mainTime = Math.floor((now - room.scheduleTime - (INTRO_DURATION_SEC * 1000)) / 1000);
+                        child.ref.update({ phase: 'main', isPlayingIntro: false, currentPlayTime: mainTime });
+                    }
+                });
+            });
+        }, 3000); // Cek setiap 3 detik
 
         // --- AUTO CLEANUP ---
         function cleanOldRooms() {
-            if (!db) return;
-            
             const now = Date.now();
-            db.ref('rooms').once('value')
-                .then(snapshot => {
-                    snapshot.forEach(child => {
-                        const room = child.val();
-                        if (room.createdAt && (now - room.createdAt > 48 * 60 * 60 * 1000)) {
-                            child.ref.remove()
-                                .catch(err => console.log("Cleanup error:", err));
-                        }
-                    });
-                })
-                .catch(err => console.log("Cleanup fetch error:", err));
+            db.ref('rooms').once('value', snapshot => {
+                snapshot.forEach(child => {
+                    const room = child.val();
+                    if (room.createdAt && (now - room.createdAt > 48 * 60 * 60 * 1000)) {
+                        child.ref.remove();
+                    }
+                });
+            });
         }
         setInterval(cleanOldRooms, 600000); 
         cleanOldRooms();
