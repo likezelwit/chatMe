@@ -1,7 +1,4 @@
 // ========== DATABASE FILM ==========
-// Tambahkan film baru di array ini. Format:
-// { id: 'UNIQUE_ID', title: 'Judul Film', genre: 'Genre • Tahun', duration: 'Durasi', rating: 'Rating', poster: 'URL_POSTER', url: 'URL_DRIVE_PREVIEW' }
-
 const movieDatabase = [
     {
         id: "inside_out_1",
@@ -10,7 +7,8 @@ const movieDatabase = [
         duration: "1j 35m",
         rating: "8.1",
         poster: "https://i.ibb.co.com/YFjZHxkW/Inside-Out-2015-film-poster.jpg",
-        url: "https://drive.google.com/file/d/1tqBTAqkhx0oPFHknnCAa5AxfMK-RvJh2/view"
+        // PERBAIKAN: /view diubah menjadi /preview
+        url: "https://drive.google.com/file/d/1tqBTAqkhx0oPFHknnCAa5AxfMK-RvJh2/preview"
     },
     {
         id: "spy_family_code_white",
@@ -19,7 +17,8 @@ const movieDatabase = [
         duration: "1j 50m",
         rating: "8.0",
         poster: "https://i.ibb.co.com/fdYgkJgD/download.jpg",
-        url: "https://drive.google.com/file/d/16oa8r4WC0PyUgFCMAUMg2VBAbX_Rul5a/view"
+        // PERBAIKAN: /view diubah menjadi /preview
+        url: "https://drive.google.com/file/d/16oa8r4WC0PyUgFCMAUMg2VBAbX_Rul5a/preview"
     },
     {
         id: "inside_out_2",
@@ -27,7 +26,7 @@ const movieDatabase = [
         genre: "Animation • 2024",
         duration: "1j 36m",
         rating: "NEW",
-        poster: "https://i.ibb.co.com/YFjZHxkW/Inside-Out-2015-film-poster.jpg", // Poster placeholder jika belum ada
+        poster: "https://i.ibb.co.com/YFjZHxkW/Inside-Out-2015-film-poster.jpg", 
         url: "https://drive.google.com/file/d/1O1qYpL86eV-DaIGlHxQr9cem7Jk4A7FR/preview"
     },
     {
