@@ -24,7 +24,8 @@ const TOTAL_ROOMS = TOTAL_LOKET * ROOMS_PER_LOKET;
 const SYNC_INTERVAL = 2000;
 const MAX_SYNC_DRIFT = 2; 
 const PRE_ROLL_VIDEO_ID = "9v1atEBmUIc"; 
-const PRE_ROLL_DURATION_SEC = 10; 
+// PERBAIKAN: Ubah dari 10 menjadi 0 untuk mematikan iklan
+const PRE_ROLL_DURATION_SEC = 0; 
 
 // ========== GLOBAL STATE ==========
 let currentPage = 'home';
@@ -32,7 +33,7 @@ let selectedMovie = null;
 let currentTier = 'free';
 let currentRoomId = null;
 let player = null; 
-let playerType = 'youtube'; // 'youtube', 'drive', atau 'ads'
+let playerType = 'youtube'; 
 let playerReady = false;
 let roomData = null;
 let dbRoomRef = null;
