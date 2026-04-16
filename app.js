@@ -94,11 +94,8 @@ async function renderLoket() {
             const globalNum = startGlobal + r - 1;
             const isOccupied = !!occupiedRooms[globalNum];
             
-            // Perbaikan: Jika room public, user bisa join langsung via klik di Loket
-            // Kita tandai room kosong jika belum terisi
             if (isOccupied) occupiedCount++;
             
-            // Logika Klik: Jika kosong -> Pesan. Jika Isi -> Coba Join (tanpa password jika public)
             const clickAction = isOccupied ? 
                 `onclick="joinRoomFromLoket('${occupiedRooms[globalNum]}')"` :
                 `onclick="event.stopPropagation();clickRoomFromLoket(${l},${r})"`;
@@ -127,20 +124,16 @@ async function renderLoket() {
     grid.innerHTML = html;
 }
 
-// Fungsi Baru: Join langsung dari klik di Loket (Hanya Public)
 function joinRoomFromLoket(roomId) {
-    // Cek dulu datanya dari Firebase untuk memastikan visibility
     if (!db) return;
     db.ref('rooms/' + roomId).once('value').then(snap => {
         if (!snap.exists()) return;
         const room = snap.val();
         
         if (room.visibility === 'private') {
-            // Jika private, lewatkan mekanisme modal biasa yang minta password
             joinRoomById(roomId); 
         } else {
-            // Jika public, masuk langsung tanpa modal password
-            myUsername = "User_" + Math.floor(Math.random() * 9000 + 1000); // Generate nama random
+            myUsername = "User_" + Math.floor(Math.random() * 9000 + 1000);
             enterCinema(roomId, room, false);
             showToast('Berhasil bergabung ke Room Publik!', 'success');
         }
@@ -158,7 +151,7 @@ function clickRoomFromLoket(loket, room) {
 }
 
 function openLoketDetail(loket) {
-    // Optional: Scroll atau Zoom
+    // Optional
 }
 
 // --- CREATE ROOM & BOOKING ---
@@ -269,7 +262,6 @@ function setQuickTime(offsetMinutes) {
     const now = new Date();
     now.setMinutes(now.getMinutes() + offsetMinutes);
     
-    // Format ke YYYY-MM-DDTHH:mm untuk input datetime-local
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const day = String(now.getDate()).padStart(2, '0');
@@ -510,7 +502,8 @@ function enterCinema(roomId, room, isHost) {
     } else if (room.phase === 'playing') {
         const countdownOverlay = document.getElementById('countdown-overlay');
         if(countdownOverlay) countdownOverlay.style.display = 'none';
-        startPreRoll(room);
+        // PERBAIKAN UTAMA 1: Langsung ke player utama, lewat pre-roll
+        initMainPlayer(room); 
     }
 }
 
@@ -764,7 +757,6 @@ function onPlayerStateChange(e) {
         addChatMessage('system', '🎬 Film telah selesai. Terima kasih telah menonton!');
     }
 
-    // Force play
     if (ytState === YT.PlayerState.PAUSED && roomData && roomData.phase === 'playing') {
         setTimeout(() => {
             if (player && playerReady && roomData && roomData.phase === 'playing') {
@@ -821,7 +813,10 @@ function initDrivePlayer(url) {
     }
     
     playerReady = true;
-    if(loading) loading.style.display = 'none';
+    // PERBAIKAN 2: Tambah delay untuk iframe drive agar tidak hitam
+    setTimeout(() => {
+        if(loading) loading.style.display = 'none';
+    }, 1500); 
     
     const syncInd = document.getElementById('sync-indicator');
     if(syncInd) syncInd.style.display = 'flex';
@@ -865,7 +860,8 @@ function handleRoomUpdate(snapshot) {
     if (prevPhase === 'waiting' && data.phase === 'playing') {
         const overlay = document.getElementById('countdown-overlay');
         if(overlay) overlay.style.display = 'none';
-        startPreRoll(data); 
+        // PERBAIKAN UTAMA 2: Langsung ke player utama, lewat pre-roll
+        initMainPlayer(data); 
     }
 
     if (data.phase === 'ended' && prevPhase !== 'ended') {
