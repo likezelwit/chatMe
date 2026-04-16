@@ -10,7 +10,7 @@ const movieDatabase = [
         duration: "1j 35m",
         rating: "8.1",
         poster: "https://i.ibb.co.com/YFjZHxkW/Inside-Out-2015-film-poster.jpg",
-        url: "https://drive.google.com/file/d/1tqBTAqkhx0oPFHknnCAa5AxfMK-RvJh2/view?usp=sharing"
+        url: "https://drive.google.com/file/d/1tqBTAqkhx0oPFHknnCAa5AxfMK-RvJh2/view"
     },
     {
         id: "spy_family_code_white",
@@ -19,7 +19,7 @@ const movieDatabase = [
         duration: "1j 50m",
         rating: "8.0",
         poster: "https://i.ibb.co.com/fdYgkJgD/download.jpg",
-        url: "https://drive.google.com/file/d/16oa8r4WC0PyUgFCMAUMg2VBAbX_Rul5a/view?usp=sharing"
+        url: "https://drive.google.com/file/d/16oa8r4WC0PyUgFCMAUMg2VBAbX_Rul5a/view"
     },
     {
         id: "inside_out_2",
