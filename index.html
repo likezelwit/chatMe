@@ -33,6 +33,7 @@
     </nav>
 
     <div class="main-container">
+        <!-- HOME PAGE -->
         <div id="home-page" class="page-section active">
             <section class="hero-section">
                 <div class="hero-bg"></div>
@@ -56,21 +57,12 @@
                 </div>
                 
                 <div class="movie-grid" id="movie-grid">
-                    
-                    <div class="movie-card" onclick="selectMovie('Jumbo', 'https://drive.google.com/file/d/1ZASz3sSmMUxzz5RAm3dC0Hteot9K3PfQ/preview')">
-                        <div class="movie-poster">
-                            <img src="https://i.ibb.co.com/NdCM9CWw/images.jpg" alt="Poster Jumbo">
-                            <div class="movie-badge">NEW</div>
-                        </div>
-                        <div class="movie-info">
-                            <h3 class="movie-title">Jumbo</h3>
-                            <p class="movie-meta">Animasi • Google Drive</p>
-                        </div>
-                    </div>
-                    </div>
+                    <!-- Film akan di-render lewat JS (app.js) -->
+                </div>
             </section>
         </div>
 
+        <!-- LOKET PAGE -->
         <div id="loket-page" class="page-section">
             <div class="loket-hero">
                 <h1 class="loket-title">Pilih Loket Anda</h1>
@@ -84,6 +76,7 @@
             <div class="loket-grid" id="loket-grid"></div>
         </div>
 
+        <!-- CREATE ROOM PAGE -->
         <div id="create-page" class="page-section">
             <div class="create-container">
                 <div class="create-header">
@@ -136,6 +129,13 @@
                 <div class="form-group">
                     <label class="form-label">Jadwal Tayang <span style="color:var(--accent-gold)">*</span></label>
                     <input type="datetime-local" id="room-time" class="form-input">
+                    <!-- Tombol Akses Cepat -->
+                    <div class="quick-time-options">
+                        <button type="button" class="btn-quick-time" onclick="setQuickTime(1)">+1 Menit</button>
+                        <button type="button" class="btn-quick-time" onclick="setQuickTime(5)">+5 Menit</button>
+                        <button type="button" class="btn-quick-time" onclick="setQuickTime(10)">+10 Menit</button>
+                        <button type="button" class="btn-quick-time" onclick="setQuickTime(60)">+1 Jam</button>
+                    </div>
                     <p class="form-hint">Minimal 1 menit dari sekarang</p>
                 </div>
 
@@ -173,6 +173,7 @@
         </div>
     </div>
 
+    <!-- CINEMA VIEW -->
     <div class="cinema-view" id="cinema-view">
         <div class="cinema-header">
             <div class="cinema-info">
@@ -208,8 +209,7 @@
                     <div class="spinner"></div>
                     <span style="font-size:.85rem;color:var(--text-secondary)">Memuat player...</span>
                 </div>
-                <div class="player-container" id="player-container">
-                    </div>
+                <div class="player-container" id="player-container"></div>
             </div>
             <div class="cinema-sidebar">
                 <div class="chat-header">
@@ -226,12 +226,14 @@
         </div>
     </div>
 
+    <!-- PRINTER OVERLAY -->
     <div class="printer-overlay" id="printer-overlay">
         <div class="printer-device"><div class="printer-slot"></div></div>
         <div id="ticket-animation-container"></div>
         <div class="printer-status">Mencetak tiket Anda...</div>
     </div>
 
+    <!-- MODALS -->
     <div class="modal-overlay" id="rules-modal" onclick="closeRules(event)">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-header"><h2 class="modal-title">📋 Rules ThMOvie</h2></div>
@@ -275,9 +277,14 @@
         </div>
     </div>
 
+    <!-- SCRIPTS -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://www.youtube.com/iframe_api"></script>
-    <script src="script.js"></script>
+    
+    <!-- PENTING: Urutan load JS harus seperti ini -->
+    <script src="data.js"></script>  <!-- 1. Database Film -->
+    <script src="init.js"></script>  <!-- 2. Config & Variable -->
+    <script src="app.js"></script>    <!-- 3. Logic Aplikasi -->
 </body>
 </html>
