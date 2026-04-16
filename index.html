@@ -155,6 +155,23 @@
             font-weight: 600;
         }
 
+        .btn-nav {
+            background: var(--accent-gold);
+            color: #000;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-nav:hover {
+            background: var(--accent-gold-hover);
+            transform: scale(1.05);
+        }
+
         /* Main Container */
         .main-container {
             padding-top: 70px;
@@ -291,6 +308,8 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .section-title {
@@ -1229,6 +1248,7 @@
             <a class="nav-link active" onclick="showPage('home')" data-page="home">Beranda</a>
             <a class="nav-link" onclick="showPage('loket')" data-page="loket">Loket</a>
             <a class="nav-link" onclick="showRules()">Rules</a>
+            <button class="btn-nav" onclick="openCreateRoomStandalone()">🎫 Pesan Tiket</button>
         </div>
     </nav>
 
@@ -1255,6 +1275,9 @@
                         <button class="btn btn-secondary" onclick="showPage('loket')">
                             <span>🎫</span> Cari Loket
                         </button>
+                        <button class="btn btn-primary" onclick="openCreateRoomStandalone()">
+                            <span>🎟️</span> Pesan Tiket Langsung
+                        </button>
                     </div>
                 </div>
             </section>
@@ -1263,6 +1286,9 @@
             <section class="section" id="movies-section">
                 <div class="section-header">
                     <h2 class="section-title">Sedang Tayang</h2>
+                    <button class="btn btn-primary btn-small" onclick="openCreateRoomStandalone()">
+                        🎫 Pesan Tiket
+                    </button>
                 </div>
                 <div class="movie-grid" id="movie-grid">
                     <!-- Movies injected by JS -->
@@ -1291,15 +1317,15 @@
 
                 <div class="form-group">
                     <label class="form-label">Film yang Dipilih</label>
-                    <input type="text" id="selected-movie-display" class="form-input" disabled placeholder="Belum memilih film">
+                    <input type="text" id="selected-movie-display" class="form-input" disabled placeholder="Belum memilih film (opsional)">
                     <input type="hidden" id="room-video-url">
-                    <p class="form-hint">Film akan terisi otomatis jika dipilih dari halaman utama, atau Anda bisa memilih film lain</p>
+                    <p class="form-hint">Film akan terisi otomatis jika dipilih dari halaman utama</p>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Link YouTube Manual (Opsional)</label>
+                    <label class="form-label">Link YouTube <span style="color: var(--accent-gold);">*</span></label>
                     <input type="text" id="manual-video-url" class="form-input" placeholder="https://youtube.com/watch?v=..." onblur="verifyManualVideo()">
-                    <p class="form-hint">Kosongkan jika sudah memilih dari card film</p>
+                    <p class="form-hint">Wajib diisi jika belum memilih film dari card</p>
                 </div>
 
                 <!-- Video Preview -->
@@ -1315,7 +1341,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Jadwal Tayang</label>
+                    <label class="form-label">Jadwal Tayang <span style="color: var(--accent-gold);">*</span></label>
                     <input type="datetime-local" id="room-time" class="form-input">
                 </div>
 
@@ -1459,6 +1485,7 @@
         let countdownInterval = null;
         let verifiedVideoData = null;
         let jazzAudio = null;
+        let tempRoomData = null; // For passing data between functions
 
         const INTRO_VIDEO_ID = "9v1atEBmUIc";
         const INTRO_DURATION_SEC = 15;
@@ -1541,14 +1568,12 @@
 
         // --- JAZZ MUSIC ---
         function initJazzMusic() {
-            // Simulasi indikator musik jazz (tanpa audio autoplay untuk UX yang baik)
-            // Di production, bisa menggunakan audio element yang di-trigger setelah interaksi user
             const indicator = document.getElementById('jazz-indicator');
             
-            // Toggle musik (simulasi visual)
             indicator.addEventListener('click', () => {
-                indicator.style.opacity = indicator.style.opacity === '0.5' ? '1' : '0.5';
-                showToast(indicator.style.opacity === '0.5' ? 'Jazz Lounge Paused' : 'Jazz Lounge Playing');
+                const isPaused = indicator.style.opacity === '0.5';
+                indicator.style.opacity = isPaused ? '1' : '0.5';
+                showToast(isPaused ? 'Jazz Lounge Playing' : 'Jazz Lounge Paused');
             });
         }
 
@@ -1581,6 +1606,22 @@
 
         function scrollToMovies() {
             document.getElementById('movies-section').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // --- STANDALONE CREATE ROOM ---
+        function openCreateRoomStandalone() {
+            // Reset form
+            selectedMovie = null;
+            verifiedVideoData = null;
+            document.getElementById('selected-movie-display').value = '';
+            document.getElementById('selected-movie-display').placeholder = 'Belum memilih film (opsional)';
+            document.getElementById('room-video-url').value = '';
+            document.getElementById('manual-video-url').value = '';
+            document.getElementById('video-preview').classList.remove('active');
+            document.getElementById('room-time').value = '';
+            
+            showPage('create');
+            showToast('Silakan isi link YouTube dan jadwal tayang', 'default');
         }
 
         // --- MOVIE CARDS ---
@@ -1679,8 +1720,6 @@
 
         function openLoket(loketNum) {
             showToast(`Membuka Loket ${loketNum}...`);
-            // Di sini bisa expand untuk show 30 room
-            // Untuk sekarang, langsung ke create room dengan loket random
             const randomRoom = Math.floor(Math.random() * 30) + ((loketNum - 1) * 30) + 1;
             showToast(`Room ${randomRoom} tersedia!`, 'success');
         }
@@ -1720,7 +1759,7 @@
         }
 
         function selectTier(tier) {
-            if (tier !== 'free') return; // Only free is available
+            if (tier !== 'free') return;
             
             document.querySelectorAll('.tier-option').forEach(opt => {
                 opt.classList.remove('selected');
@@ -1745,21 +1784,34 @@
 
         function processBooking() {
             const timeInput = document.getElementById('room-time').value;
-            const videoUrl = document.getElementById('room-video-url').value;
+            const manualUrl = document.getElementById('manual-video-url').value.trim();
+            const savedUrl = document.getElementById('room-video-url').value;
+            
+            // Determine video URL
+            let finalUrl = manualUrl || savedUrl;
+            let videoId = null;
+            let videoTitle = 'Unknown';
+            
+            if (verifiedVideoData) {
+                videoId = verifiedVideoData.id;
+                videoTitle = verifiedVideoData.title;
+            } else if (finalUrl) {
+                videoId = extractVideoID(finalUrl);
+                videoTitle = 'Video Manual';
+            }
+            
+            if (!videoId) {
+                showToast('Masukkan link YouTube yang valid!', 'error');
+                return;
+            }
             
             if (!timeInput) {
                 showToast('Pilih jadwal tayang terlebih dahulu!', 'error');
                 return;
             }
             
-            if (!videoUrl && !verifiedVideoData) {
-                showToast('Pilih film atau masukkan link YouTube!', 'error');
-                return;
-            }
-            
             const quota = updateQuota();
             const scheduleTime = new Date(timeInput).getTime();
-            const videoId = verifiedVideoData ? verifiedVideoData.id : extractVideoID(videoUrl);
             
             // Random loket 1-6, room 1-30 per loket
             const loket = Math.floor(Math.random() * 6) + 1;
@@ -1769,7 +1821,7 @@
                 loket: loket,
                 room: room,
                 videoId: videoId,
-                videoTitle: verifiedVideoData ? verifiedVideoData.title : 'Unknown',
+                videoTitle: videoTitle,
                 capacity: quota,
                 scheduleTime: scheduleTime,
                 createdAt: firebase.database.ServerValue.TIMESTAMP,
@@ -1779,17 +1831,22 @@
                 hostUsername: myUsername
             };
             
+            // Save to temp for animation callback
+            tempRoomData = { ...roomObj, roomId: null };
+            
             const newRoomRef = db.ref('rooms').push();
+            tempRoomData.roomId = newRoomRef.key;
+            
             newRoomRef.set(roomObj)
                 .then(() => {
-                    showPrinterAnimation(loket, room, quota, newRoomRef.key);
+                    showPrinterAnimation(loket, room, quota, newRoomRef.key, roomObj);
                 })
                 .catch(err => {
                     showToast('Gagal membuat room: ' + err.message, 'error');
                 });
         }
 
-        function showPrinterAnimation(loket, room, quota, roomId) {
+        function showPrinterAnimation(loket, room, quota, roomId, roomObj) {
             document.getElementById('printer-overlay').classList.add('active');
             const container = document.getElementById('ticket-animation-container');
             
@@ -1807,7 +1864,7 @@
             
             setTimeout(() => {
                 document.getElementById('printer-overlay').classList.remove('active');
-                enterCinema(roomId, { ...roomObj, loket, room, capacity: quota });
+                enterCinema(roomId, roomObj);
             }, 2500);
         }
 
