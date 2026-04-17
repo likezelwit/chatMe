@@ -10,16 +10,6 @@
 </head>
 <body>
 
-    <div class="jazz-indicator" id="jazz-indicator">
-        <div class="jazz-waves">
-            <div class="jazz-wave"></div>
-            <div class="jazz-wave"></div>
-            <div class="jazz-wave"></div>
-            <div class="jazz-wave"></div>
-        </div>
-        <span>Jazz Lounge</span>
-    </div>
-
     <div class="toast-container" id="toast-container"></div>
 
     <nav class="nav-header" id="nav-header">
@@ -45,7 +35,6 @@
                     <div class="hero-actions">
                         <button class="btn btn-primary" onclick="scrollToMovies()">🎬 Jelajahi Film</button>
                         <button class="btn btn-secondary" onclick="showPage('loket')">🎫 Cari Loket</button>
-                        <button class="btn btn-primary" onclick="openCreateRoom()">🎟️ Pesan Tiket</button>
                     </div>
                 </div>
             </section>
@@ -53,7 +42,7 @@
             <section class="section" id="movies-section">
                 <div class="section-header">
                     <h2 class="section-title">Sedang Tayang</h2>
-                    <button class="btn btn-primary btn-sm" onclick="openCreateRoom()">🎫 Pesan Tiket</button>
+                    <!-- Removed specific button, moved to Nav -->
                 </div>
                 <div class="movie-grid" id="movie-grid"></div>
             </section>
@@ -63,7 +52,7 @@
         <div id="loket-page" class="page-section">
             <div class="loket-hero">
                 <h1 class="loket-title">Pilih Loket Anda</h1>
-                <p class="loket-subtitle">6 loket dengan 30 room per loket. Total 180 room bioskop virtual yang tersedia.</p>
+                <p class="loket-subtitle">6 loket dengan 30 room per loket. Total 180 room bioskop virtual.</p>
                 <div class="loket-stats">
                     <div class="loket-stat"><div class="loket-stat-num">6</div><div class="loket-stat-label">Loket</div></div>
                     <div class="loket-stat"><div class="loket-stat-num">180</div><div class="loket-stat-label">Total Room</div></div>
@@ -83,16 +72,14 @@
                 
                 <div class="form-group">
                     <label class="form-label">Film yang Dipilih</label>
-                    <input type="text" id="selected-movie-display" class="form-input" disabled placeholder="Belum memilih film (opsional)">
+                    <input type="text" id="selected-movie-display" class="form-input" disabled placeholder="Belum memilih film">
                     <input type="hidden" id="room-video-url">
+                    <input type="hidden" id="room-video-source">
                     <p class="form-hint">Film akan terisi otomatis jika dipilih dari halaman utama</p>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">Link YouTube / Drive <span style="color:var(--accent-gold)">*</span></label>
-                    <input type="text" id="manual-video-url" class="form-input" placeholder="https://..." oninput="verifyManualVideo()">
-                    <p class="form-hint">Wajib diisi jika belum memilih film dari card</p>
-                </div>
+                <!-- Removed manual link input to simplify UX based on "Active Movies" request. 
+                     If manual link is needed, logic would go here, but user emphasized specific movies. -->
 
                 <div class="video-preview" id="video-preview">
                     <div class="video-preview-content">
@@ -133,22 +120,6 @@
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">Pilih Tier</label>
-                    <div class="tier-options">
-                        <div class="tier-option selected" onclick="selectTier('free')" data-tier="free">
-                            <div class="tier-name">Gratis</div>
-                            <div class="tier-price">Rp 0</div>
-                            <div class="tier-capacity">30-57 Kursi</div>
-                        </div>
-                        <div class="tier-option disabled">
-                            <span class="dev-badge">SOON</span>
-                            <div class="tier-name">Premium</div>
-                            <div class="tier-price">Rp 10.000/bln</div>
-                        </div>
-                    </div>
-                </div>
-
                 <div class="quota-display">
                     <div class="quota-number" id="quota-display">45</div>
                     <div class="quota-label">Kursi Tersedia</div>
@@ -176,7 +147,6 @@
         <div class="cinema-main">
             <div class="cinema-player-area">
                 <div class="sync-indicator" id="sync-indicator">Synced</div>
-                <div class="lock-indicator" id="lock-indicator">🔒 Locked</div>
                 
                 <div class="end-screen-overlay" id="end-screen-overlay">
                     <h2>Film Telah Selesai</h2>
@@ -226,7 +196,7 @@
                     <li>Harap sopan di dalam chat room</li>
                     <li>Room otomatis terhapus 24 jam setelah film selesai</li>
                     <li>Video diputar otomatis sesuai jadwal</li>
-                    <li>Gunakan link valid (YouTube/Drive Publik)</li>
+                    <li>Gunakan link valid (SeekStreaming/YouTube)</li>
                 </ul>
             </div>
             <div class="modal-footer"><button class="btn btn-primary" onclick="closeRules()">Mengerti</button></div>
