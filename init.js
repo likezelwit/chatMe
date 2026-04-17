@@ -14,21 +14,18 @@ try {
     firebase.initializeApp(firebaseConfig);
     db = firebase.database();
 } catch(e) {
-    console.error("Firebase init error:", e);
+    console.error("Firebase Init Error:", e);
 }
 
 // ========== CONSTANTS ==========
 const TOTAL_LOKET = 6;
 const ROOMS_PER_LOKET = 30;
-const SYNC_INTERVAL = 2000;
-const MAX_SYNC_DRIFT = 2; 
-const PRE_ROLL_VIDEO_ID = "9v1atEBmUIc";
-const PRE_ROLL_DURATION_SEC = 0; // Set 0 to disable pre-roll ads
+const PRE_ROLL_VIDEO_ID = ""; // Kosongkan jika tidak mau pakai iklan
+const PRE_ROLL_DURATION_SEC = 0;
 
 // ========== GLOBAL STATE ==========
 let currentPage = 'home';
 let selectedMovie = null;
-let currentTier = 'free';
 let currentRoomId = null;
 let player = null; 
 let playerType = 'youtube'; 
@@ -44,38 +41,14 @@ let verifiedVideoData = null;
 let tempRoomData = null;
 let pendingJoinRoomId = null;
 let isSyncing = false;
-let lastSyncState = -1; 
-let lastSyncTime = -1;
 let presenceCleanup = null; 
 let occupiedRooms = {}; 
-let isPreRollPlaying = false; 
+let isHost = false; // Track if current user is host
+let isPreRollPlaying = false;
 
 // ========== HELPERS ==========
 function loketRoomToGlobal(loket, room) {
     return ((loket - 1) * ROOMS_PER_LOKET) + room;
-}
-function globalToLoketRoom(globalNum) {
-    const loket = Math.floor((globalNum - 1) / ROOMS_PER_LOKET) + 1;
-    const room = ((globalNum - 1) % ROOMS_PER_LOKET) + 1;
-    return { loket, room };
-}
-
-function getVideoSource(url) {
-    if (!url) return null;
-    
-    // YouTube Parsing
-    const ytRegex = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const ytMatch = url.match(ytRegex);
-    if (ytMatch && ytMatch[2].length === 11) {
-        return { type: 'youtube', id: ytMatch[2] };
-    }
-    
-    // SeekStreaming Detection (Simple check for our embed domain)
-    if (url.includes('embedseek.com')) {
-        return { type: 'seekstream', url: url };
-    }
-
-    return null;
 }
 
 function randomQuota() {
