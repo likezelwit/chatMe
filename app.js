@@ -641,6 +641,13 @@ function forceStartPlayback() {
 function togglePauseAll() {
     if (!isHost || !playerReady) return;
     
+    // FIX: Hanya YouTube yang bisa dikontrol Pause/Play via API
+    // Seekstream menggunakan iframe biasa, tidak bisa diakses JS eksternalnya
+    if (playerType !== 'youtube') {
+        showToast('Kontrol Pause hanya tersedia untuk video YouTube.', 'error');
+        return;
+    }
+
     // Get current state from player
     const state = player.getPlayerState();
     const isPlaying = (state === YT.PlayerState.PLAYING);
@@ -768,9 +775,9 @@ function initSeekPlayer(url) {
     iframe.style.top = '0';
     iframe.style.left = '0';
     iframe.style.zIndex = '10';
-    iframe.setAttribute('allowfullscreen', '');
-    // WAJIB: 'autoplay' di allow biar browser ngizinin
-    iframe.setAttribute('allow', 'autoplay; fullscreen');
+    
+    // FIX: Hapus allowfullscreen, gunakan allow attribute saja (modern standard)
+    iframe.setAttribute('allow', 'autoplay; fullscreen'); 
     
     wrapper.appendChild(iframe);
     container.appendChild(wrapper);
