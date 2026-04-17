@@ -1,4 +1,13 @@
-// ========== APP LOGIC (FIXED) ==========
+// ========== APP LOGIC (REVISED FIX) ==========
+
+// --- GLOBAL YOUTUBE API HANDLER ---
+window.ytApiReady = false;
+
+// Fungsi ini akan dipanggil otomatis oleh YouTube API
+function onYouTubeIframeAPIReady() {
+    window.ytApiReady = true;
+    console.log("YouTube API Siap!");
+}
 
 // --- MOVIE RENDERING ---
 function renderMovies() {
@@ -9,7 +18,7 @@ function renderMovies() {
         <div class="movie-card" onclick="selectMovie('${m.id}')">
             <img class="movie-poster" src="${m.poster}" alt="${m.title}" loading="lazy">
             <span class="badge-rating" style="display:${m.rating === 'NEW' ? 'none' : 'flex'}">★ ${m.rating}</span>
-            ${m.rating === 'NEW' ? '<span class="badge-rating" style="background:var(--accent-gold); color:#000;">NEW</span>' : ''}
+            ${m.rating === 'NEW' ? '<span class="badge-rating" style="background:var(--accent-gold); color:#000; width:auto; padding:2px 6px; font-size:0.6rem;">NEW</span>' : ''}
             <div class="movie-overlay">
                 <div class="movie-info">
                     <h3 class="movie-title-card">${m.title}</h3>
@@ -30,11 +39,9 @@ function createRoomFromMovie(id) {
     const movie = movieDatabase.find(m => m.id === id);
     if (!movie) return;
     
-    // Set data utama
     selectedMovie = movie;
     let videoUrl = movie.url;
 
-    // Update UI Form
     const displayEl = document.getElementById('selected-movie-display');
     if(displayEl) {
         displayEl.value = movie.title;
@@ -45,15 +52,13 @@ function createRoomFromMovie(id) {
     const urlInput = document.getElementById('room-video-url');
     if(urlInput) urlInput.value = videoUrl;
     
-    // Reset manual input agar tidak bentrok
     const manualInput = document.getElementById('manual-video-url');
     if(manualInput) {
         manualInput.value = '';
-        manualInput.disabled = true; // Kunci manual input jika film dipilih
+        manualInput.disabled = true;
         manualInput.style.opacity = '0.5';
     }
 
-    // Pre-verifikasi untuk menampilkan preview
     const source = getVideoSource(videoUrl);
     const preview = document.getElementById('video-preview');
     if(preview) preview.classList.add('active');
@@ -65,22 +70,10 @@ function createRoomFromMovie(id) {
 
     if(thumb) thumb.src = movie.poster;
     if(titleEl) titleEl.textContent = movie.title;
+    if(channel) channel.textContent = source.type === 'youtube' ? 'YouTube' : 'Google Drive';
+    if(duration) duration.textContent = movie.duration;
     
-    // Tentukan channel info
-    if (source && source.type === 'youtube') {
-        if(channel) channel.textContent = 'YouTube';
-        if(duration) duration.textContent = movie.duration;
-        verifiedVideoData = { id: movie.id, title: movie.title, url: movie.url, type: 'youtube' };
-    } else if (source && source.type === 'drive') {
-        if(channel) channel.textContent = 'Google Drive (HD)';
-        if(duration) duration.textContent = movie.duration;
-        // Simpan ID Drive yang sudah diparse
-        verifiedVideoData = { id: source.id, title: movie.title, url: movie.url, type: 'drive' }; 
-    } else {
-        if(preview) preview.classList.remove('active');
-        verifiedVideoData = null;
-    }
-    
+    verifiedVideoData = { id: movie.id, title: movie.title, url: movie.url, type: source.type };
     showPage('create');
 }
 
@@ -172,12 +165,11 @@ function clickRoomFromLoket(loket, room) {
 }
 
 function openLoketDetail(loket) {
-    // Bisa dikembangkan untuk melihat detail room di loket tertentu
+    // Placeholder
 }
 
 // --- CREATE ROOM & BOOKING ---
 function openCreateRoom(preLoket, preRoom) {
-    // Reset state jika bukan dari klik film
     if (!verifiedVideoData) {
         selectedMovie = null;
         verifiedVideoData = null;
@@ -186,8 +178,8 @@ function openCreateRoom(preLoket, preRoom) {
         if(displayEl) {
             displayEl.value = '';
             displayEl.style.fontWeight = 'normal';
-            displayEl.dataset.preLoket = '';
-            displayEl.dataset.preRoom = '';
+            delete displayEl.dataset.preLoket;
+            delete displayEl.dataset.preRoom;
         }
         const manualInput = document.getElementById('manual-video-url');
         if(manualInput) {
@@ -248,7 +240,6 @@ function verifyManualVideo() {
     const preview = document.getElementById('video-preview');
     const displayEl = document.getElementById('selected-movie-display');
     
-    // Jika user mengetik manual, reset selected movie
     if (url.length > 5) {
         selectedMovie = null;
         if(displayEl) {
@@ -346,10 +337,8 @@ function processBooking() {
     const savedUrlInput = document.getElementById('room-video-url');
     const savedUrl = savedUrlInput ? savedUrlInput.value : '';
 
-    // Logic penentuan URL Final
     let finalUrl = manualUrl || savedUrl;
     
-    // Fallback logic jika kosong (seharusnya tidak terjadi karena validasi tombol)
     if (!finalUrl && selectedMovie && selectedMovie.url) {
         finalUrl = selectedMovie.url;
     }
@@ -363,7 +352,6 @@ function processBooking() {
 
     const source = getVideoSource(finalUrl);
 
-    // Validasi
     if (!source) { showToast('Link video tidak valid (Hanya YouTube / Drive)!', 'error'); return; }
     if (!timeValue) { showToast('Pilih jadwal tayang terlebih dahulu!', 'error'); return; }
 
@@ -388,7 +376,6 @@ function processBooking() {
         password = passValue;
     }
 
-    // Penentuan Room
     let loket, room;
     const displayEl = document.getElementById('selected-movie-display');
     const preLoket = displayEl && displayEl.dataset.preLoket ? parseInt(displayEl.dataset.preLoket) : 0;
@@ -396,10 +383,9 @@ function processBooking() {
 
     if (preLoket && preRoom) {
         const globalNum = loketRoomToGlobal(preLoket, preRoom);
-        // Cek ulang real-time apakah room masih kosong
         if (occupiedRooms[globalNum]) {
-            showToast('Room ini sudah diambil orang lain! Pilih room lain.', 'error');
-            renderLoket(); // Refresh UI
+            showToast('Room ini sudah diambil! Pilih room lain.', 'error');
+            renderLoket();
             return;
         }
         loket = preLoket;
@@ -421,7 +407,7 @@ function processBooking() {
         room: room,
         globalRoomNum: globalNum,
         videoSource: source.type, 
-        videoId: source.type === 'youtube' ? source.id : (source.id || null), // Simpan ID Drive jika ada
+        videoId: source.type === 'youtube' ? source.id : (source.id || null),
         videoUrl: source.type === 'drive' ? source.url : null,
         videoTitle: videoTitle,
         capacity: quota,
@@ -445,7 +431,6 @@ function processBooking() {
         showPrinterAnimation(loket, room, quota, newRef.key, roomObj);
     }).catch(err => {
         showToast('Gagal membuat room: ' + err.message, 'error');
-        console.error(err);
     });
 }
 
@@ -584,6 +569,10 @@ function cleanupCinema() {
     
     const playerContainer = document.getElementById('player-container');
     if(playerContainer) playerContainer.innerHTML = '';
+    
+    // Hapus tombol force play jika ada
+    const forcePlayBtn = document.getElementById('force-play-btn');
+    if(forcePlayBtn) forcePlayBtn.remove();
 }
 
 // --- CHAT & PRESENCE ---
@@ -710,7 +699,7 @@ function initMainPlayer(room) {
     }
 }
 
-// --- YOUTUBE PLAYER WRAPPER ---
+// --- YOUTUBE PLAYER WRAPPER (FIXED TIMING) ---
 function initYoutubePlayer(videoId) {
     const loading = document.getElementById('cinema-loading');
     if(loading) loading.style.display = 'flex';
@@ -727,35 +716,37 @@ function initYoutubePlayer(videoId) {
 
     playerType = 'youtube';
     
-    // Pastikan API sudah siap
-    if (typeof YT !== 'undefined' && YT.Player) {
-        player = new YT.Player('player-container', {
-            height: '100%',
-            width: '100%',
-            videoId: videoId,
-            playerVars: {
-                autoplay: 1,
-                controls: 1, // Ubah ke 1 agar user bisa kontrol jika sync error
-                disablekb: 0,
-                fs: 1,
-                modestbranding: 1,
-                rel: 0,
-                playsinline: 1,
-                enablejsapi: 1,
-                origin: window.location.origin
-            },
-            events: {
-                onReady: onPlayerReady,
-                onStateChange: onPlayerStateChange,
-                onError: onPlayerError
-            }
-        });
-    } else {
-        console.error("YouTube API not loaded");
-        showToast('Memuat ulang player YouTube...', 'error');
-        // Fallback reload API jika gagal
-        setTimeout(() => initYoutubePlayer(videoId), 2000);
+    // FIX: Tunggu API Ready
+    if (!window.ytApiReady || typeof YT === 'undefined' || !YT.Player) {
+        console.log("YouTube API belum siap, mencoba ulang...");
+        // Coba lagi setelah 1 detik
+        setTimeout(() => {
+            initYoutubePlayer(videoId);
+        }, 1000);
+        return;
     }
+
+    player = new YT.Player('player-container', {
+        height: '100%',
+        width: '100%',
+        videoId: videoId,
+        playerVars: {
+            autoplay: 1,
+            controls: 1, 
+            disablekb: 0,
+            fs: 1,
+            modestbranding: 1,
+            rel: 0,
+            playsinline: 1,
+            enablejsapi: 1,
+            origin: window.location.origin
+        },
+        events: {
+            onReady: onPlayerReady,
+            onStateChange: onPlayerStateChange,
+            onError: onPlayerError
+        }
+    });
 }
 
 function onPlayerReady(e) {
@@ -786,19 +777,8 @@ function onPlayerStateChange(e) {
         if (dbRoomRef) {
             dbRoomRef.update({ phase: 'ended', playState: 0, lastSync: firebase.database.ServerValue.TIMESTAMP });
         }
-        addChatMessage('system', '🎬 Film telah selesai. Terima kasih!');
+        addChatMessage('system', '🎬 Film telah selesai. Terima kasih telah menonton!');
     }
-
-    // Auto-play force (opsional, kadang mengganggu jika user pause sendiri)
-    /*
-    if (ytState === YT.PlayerState.PAUSED && roomData && roomData.phase === 'playing' && !isSyncing) {
-        setTimeout(() => {
-            if (player && playerReady && roomData && roomData.phase === 'playing') {
-                player.playVideo();
-            }
-        }, 500);
-    }
-    */
 }
 
 function onPlayerError(e) {
@@ -809,13 +789,13 @@ function onPlayerError(e) {
     let msg = 'Terjadi kesalahan pada video';
     if (e.data === 2) msg = 'Parameter URL Salah';
     else if (e.data === 100) msg = 'Video tidak ditemukan (Private/Deleted)';
-    else if (e.data === 101 || e.data === 150) msg = 'Video tidak diizinkan di-embed oleh pemilik';
+    else if (e.data === 101 || e.data === 150) msg = 'Video tidak diizinkan di-embed';
     
     showToast(msg, 'error');
     addChatMessage('system', '❌ ' + msg);
 }
 
-// --- DRIVE PLAYER WRAPPER (FIXED 100%) ---
+// --- DRIVE PLAYER WRAPPER (FORCE PLAY FIX) ---
 function initDrivePlayer(urlOrId) {
     const loading = document.getElementById('cinema-loading');
     if(loading) loading.style.display = 'flex';
@@ -832,9 +812,7 @@ function initDrivePlayer(urlOrId) {
 
     playerType = 'drive';
     
-    // Extract ID logic
     let id = urlOrId;
-    // Jika urlOrId masih berupa URL lengkap, kita parse lagi
     if (urlOrId.includes('http')) {
         const source = getVideoSource(urlOrId);
         if (source && source.id) {
@@ -852,13 +830,16 @@ function initDrivePlayer(urlOrId) {
         return;
     }
 
-    // FIX UTAMA: Gunakan URL Preview standar
-    // Embed URL untuk Drive harus '/preview'
+    // FIX: URL PREVIEW
     const embedUrl = `https://drive.google.com/file/d/${id}/preview`;
     
-    // Gunakan iframe dengan atribut lengkap
     const iframe = document.createElement('iframe');
-    iframe.src = embedUrl + '?autoplay=1'; // Tambah parameter autoplay
+    // Fix: Pastikan atribut allow diset SEBELUM append
+    iframe.src = embedUrl; 
+    iframe.setAttribute('allow', 'autoplay; fullscreen; picture-in-picture');
+    iframe.setAttribute('allowfullscreen', '');
+    
+    // Fix: Style Pastikan Fill
     iframe.style.width = '100%';
     iframe.style.height = '100%';
     iframe.style.border = 'none';
@@ -867,22 +848,56 @@ function initDrivePlayer(urlOrId) {
     iframe.style.left = '0';
     iframe.style.zIndex = '10';
     
-    // Atribut penting agar browser tidak memblokir iframe
-    iframe.allow = 'autoplay; fullscreen; encrypted-media; picture-in-picture';
-    iframe.setAttribute('allowfullscreen', '');
-    
     container.appendChild(iframe);
     
     playerReady = true;
     
-    // Delay loading visual agar Drive sempat buffering
+    // Hapus loading setelah 3 detik (Drive loading cukup lama)
     setTimeout(() => {
         if(loading) loading.style.display = 'none';
-        showToast('Video Google Drive siap.', 'success');
+        showToast('Video Google Drive dimuat.', 'success');
+        
+        // FIX: Cek jika user belum play (Autoplay failed), tampilkan tombol
+        setTimeout(() => {
+            checkDriveAutoplay(iframe);
+        }, 4000);
     }, 3000); 
     
-    // Tampilkan notifikasi bahwa sync tidak aktif untuk Drive
-    addChatMessage('system', '📺 Note: Sinkronisasi waktu otomatis tidak tersedia untuk Google Drive.');
+    addChatMessage('system', '📺 Note: Sinkronisasi waktu tidak tersedia untuk Google Drive.');
+}
+
+// --- FIX: Cek & Force Play untuk Drive ---
+function checkDriveAutoplay(iframeElement) {
+    // Jika user belum interact dengan iframe, atau browser blokir autoplay
+    // Tampilkan tombol overlay di atas video
+    if (document.getElementById('force-play-btn')) return; // Sudah ada tombol
+
+    const btn = document.createElement('div');
+    btn.id = 'force-play-btn';
+    btn.innerHTML = '▶ Klik untuk Memutar';
+    btn.style.cssText = `
+        position: absolute; inset: 0; z-index: 100;
+        background: rgba(0,0,0,0.7); display: flex;
+        align-items: center; justify-content: center;
+        color: white; font-size: 1.5rem; font-weight: bold;
+        cursor: pointer; backdrop-filter: blur(5px);
+        transition: opacity 0.5s;
+    `;
+    
+    btn.onclick = () => {
+        // Refresh iframe untuk memaksa browser mengizinkan audio play
+        const currentSrc = iframeElement.src;
+        iframeElement.src = currentSrc + '&autoplay=1';
+        btn.style.opacity = '0';
+        setTimeout(() => btn.remove(), 500);
+    };
+
+    const area = document.getElementById('cinema-player-area');
+    if(area) area.appendChild(btn);
+
+    // Auto hide jika video sudah play (deteksi sederhana)
+    // Karena kita tidak bisa detect event play pada iframe eksternal (CORS),
+    // kita biarkan tombol ini hilang jika user klik.
 }
 
 function startSyncLoop() {
@@ -922,7 +937,10 @@ function handleRoomUpdate(snapshot) {
         const overlay = document.getElementById('countdown-overlay');
         if(overlay) overlay.style.display = 'none';
         
-        // Cek apakah perlu pre-roll
+        // Hapus tombol force play jika ada
+        const forceBtn = document.getElementById('force-play-btn');
+        if(forceBtn) forceBtn.remove();
+
         if (PRE_ROLL_DURATION_SEC > 0) {
             startPreRoll(data);
         } else {
@@ -940,19 +958,16 @@ function handleRoomUpdate(snapshot) {
             const serverPos = data.currentTime || 0;
             const drift = Math.abs(myPos - serverPos);
 
-            // Sync Time jika selisih > 2 detik
             if (drift > MAX_SYNC_DRIFT && !isSyncing) {
                 isSyncing = true;
                 player.seekTo(serverPos, true);
                 setTimeout(() => { isSyncing = false; }, 1000);
             }
 
-            // Sync Play/Pause
             const shouldPlay = data.playState === 1;
             const myState = player.getPlayerState();
             const amPlaying = (myState === YT.PlayerState.PLAYING);
 
-            // Jika server play tapi kita pause, playkan. Kecuali kita sedang nge-drag seekbar.
             if (shouldPlay && !amPlaying && !isSyncing) {
                 player.playVideo();
             }
@@ -1146,7 +1161,7 @@ function showToast(message, type) {
     setTimeout(() => {
         toast.style.opacity = '0';
         toast.style.transform = 'translateX(100%)';
-        toast.style.transition = 'all .3s';
+        toast.style.transition: 'all .3s';
         setTimeout(() => toast.remove(), 300);
     }, 3500);
 }
@@ -1191,18 +1206,15 @@ setInterval(() => {
             const room = child.val();
             if (!room) return;
             const key = child.key;
-            // Auto Start
             if (room.phase === 'waiting' && room.scheduleTime && now >= room.scheduleTime) {
                 updates[key + '/phase'] = 'playing';
                 updates[key + '/playState'] = 1;
                 updates[key + '/currentTime'] = 0;
             }
-            // Auto End (5 hours after start)
             if (room.phase === 'playing' && room.scheduleTime && (now - room.scheduleTime > 5 * 60 * 60 * 1000)) {
                 updates[key + '/phase'] = 'ended';
                 updates[key + '/playState'] = 0;
             }
-            // Cleanup (24 hours)
             if (room.scheduleTime && (now - room.scheduleTime > 24 * 60 * 60 * 1000)) {
                 toRemove.push(key);
             }
