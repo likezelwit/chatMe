@@ -1,6 +1,6 @@
-// ========== APP LOGIC (UPDATED & FIXED) ==========
+// ========== APP LOGIC (UPDATED) ==========
 
-// --- MOVIE RENDERING ---
+// --- RENDER FUNCTIONS ---
 function renderMovies() {
     const grid = document.getElementById('movie-grid');
     if(!grid) return;
@@ -13,31 +13,18 @@ function renderMovies() {
         
         if (m.status === 'placeholder') {
             statusBadge = '<span class="status-badge placeholder">Download</span>';
-            overlayHtml = `
-                <div class="movie-status-overlay">
-                    <div style="font-size:2rem;margin-bottom:10px;">⏳</div>
-                    <div style="font-weight:bold;">Sedang Proses</div>
-                    <div style="font-size:0.8rem;opacity:0.7">Mohon tunggu sebentar</div>
-                </div>`;
+            overlayHtml = `<div class="movie-status-overlay"><div style="font-size:2rem;margin-bottom:10px;">⏳</div><div style="font-weight:bold;">Sedang Proses</div></div>`;
             disabledClass = 'disabled';
             clickAction = '';
         } else if (m.status === 'coming_soon') {
             statusBadge = '<span class="status-badge coming-soon">Coming Soon</span>';
-            overlayHtml = `
-                <div class="movie-status-overlay">
-                    <div style="font-size:2rem;margin-bottom:10px;">🔒</div>
-                    <div style="font-weight:bold;">Segera Hadir</div>
-                    <div style="font-size:0.8rem;opacity:0.7">Film belum tersedia</div>
-                </div>`;
+            overlayHtml = `<div class="movie-status-overlay"><div style="font-size:2rem;margin-bottom:10px;">🔒</div><div style="font-weight:bold;">Segera Hadir</div></div>`;
             disabledClass = 'disabled';
             clickAction = '';
         } else {
-            // Active
-            if(m.rating === 'NEW') {
-                statusBadge = '<span class="badge-rating" style="background:var(--accent-gold); color:#000;">NEW</span>';
-            } else {
-                statusBadge = `<span class="badge-rating">★ ${m.rating}</span>`;
-            }
+            statusBadge = m.rating === 'NEW' 
+                ? '<span class="badge-rating" style="background:var(--accent-gold); color:#000;">NEW</span>' 
+                : `<span class="badge-rating">★ ${m.rating}</span>`;
         }
 
         return `
@@ -61,7 +48,7 @@ function selectMovie(id) {
     const movie = movieDatabase.find(m => m.id === id);
     if (movie && movie.status === 'active') {
         selectedMovie = movie;
-        showToast('Dipilih: ' + selectedMovie.title, 'success');
+        showToast('Film dipilih: ' + selectedMovie.title, 'success');
     }
 }
 
@@ -77,7 +64,6 @@ function createRoomFromMovie(id) {
     if(displayEl) {
         displayEl.value = movie.title;
         displayEl.style.fontWeight = 'bold';
-        displayEl.style.color = '#fff';
     }
     
     const urlInput = document.getElementById('room-video-url');
@@ -91,21 +77,14 @@ function createRoomFromMovie(id) {
     const thumb = document.getElementById('preview-thumb');
     const titleEl = document.getElementById('preview-title');
     const channel = document.getElementById('preview-channel');
-    const duration = document.getElementById('preview-duration');
 
     if(thumb) thumb.src = movie.poster;
     if(titleEl) titleEl.textContent = movie.title;
-    
-    if (videoSource === 'seekstream') {
-        if(channel) channel.textContent = 'SeekStreaming (HD)';
-        if(duration) duration.textContent = movie.duration;
-        verifiedVideoData = { id: movie.id, title: movie.title, url: movie.url, type: 'seekstream' };
-    } else if (videoSource === 'youtube') {
-        if(channel) channel.textContent = 'YouTube';
-        if(duration) duration.textContent = movie.duration;
-        verifiedVideoData = { id: movie.id, title: movie.title, url: movie.url, type: 'youtube' };
+    if(channel) channel.textContent = videoSource === 'seekstream' ? 'SeekStreaming' : 'YouTube';
+
+    if (videoSource === 'seekstream' || videoSource === 'youtube') {
+        verifiedVideoData = { id: movie.id, title: movie.title, url: movie.url, type: videoSource };
     } else {
-        if(preview) preview.classList.remove('active');
         verifiedVideoData = null;
     }
     showPage('create');
@@ -146,32 +125,27 @@ async function renderLoket() {
             const roomInfo = occupiedRooms[globalNum];
             
             let statusClass = 'available'; 
-            let title = `Room ${r} - Kosong (Klik untuk pesan)`;
+            let title = `Room ${r} - Kosong`;
             let clickAction = `onclick="event.stopPropagation();clickRoomFromLoket(${l},${r})"`;
 
             if (roomInfo) {
                 occupiedCount++;
-                
                 if (roomInfo.visibility === 'private' || roomInfo.phase === 'ended') {
                     statusClass = 'closed'; 
-                    title = 'Room Private/Selesai';
+                    title = 'Private/Selesai';
                     clickAction = `onclick="joinRoomFromLoket('${roomInfo.roomId}')"`;
-                } 
-                else if (roomInfo.capacity && Object.keys(roomInfo.presence || {}).length >= roomInfo.capacity) {
+                } else if (roomInfo.capacity && Object.keys(roomInfo.presence || {}).length >= roomInfo.capacity) {
                     statusClass = 'full'; 
-                    title = 'Room Penuh (Masih bisa gabung)';
+                    title = 'Penuh';
                     clickAction = `onclick="joinRoomFromLoket('${roomInfo.roomId}')"`;
-                } 
-                else {
+                } else {
                     statusClass = 'occupied'; 
-                    title = 'Room Sedang Tayang (Klik untuk gabung)';
+                    title = 'Sedang Tayang';
                     clickAction = `onclick="joinRoomFromLoket('${roomInfo.roomId}')"`;
                 }
             }
 
-            roomsHtml += `<div class="room-mini ${statusClass}" 
-                ${clickAction}
-                title="${title}">${r}</div>`;
+            roomsHtml += `<div class="room-mini ${statusClass}" ${clickAction} title="${title}">${r}</div>`;
         }
 
         const available = ROOMS_PER_LOKET - occupiedCount;
@@ -208,18 +182,16 @@ function joinRoomFromLoket(roomId) {
 
 function checkJoinLogic(room, roomId) {
     if (!room) return;
-    
     if(room.phase === 'ended') {
         showToast('Room ini sudah selesai.', 'error');
         return;
     }
-
     if (room.visibility === 'private') {
         joinRoomById(roomId); 
     } else {
         myUsername = "User_" + Math.floor(Math.random() * 9000 + 1000);
         enterCinema(roomId, room, false);
-        showToast('Berhasil bergabung ke Room Publik!', 'success');
+        showToast('Berhasil bergabung!', 'success');
     }
 }
 
@@ -229,13 +201,10 @@ function clickRoomFromLoket(loket, room) {
         showToast('Room ini sudah terisi!', 'error');
         return;
     }
-    showToast(`Room ${room} di Loket ${loket} tersedia.`, 'success');
     openCreateRoom(loket, room);
 }
 
-function openLoketDetail(loket) {
-    // Optional
-}
+function openLoketDetail(loket) { /* Placeholder */ }
 
 // --- CREATE ROOM & BOOKING ---
 function openCreateRoom(preLoket, preRoom) {
@@ -245,7 +214,6 @@ function openCreateRoom(preLoket, preRoom) {
         const displayEl = document.getElementById('selected-movie-display');
         if(displayEl) {
             displayEl.value = '';
-            displayEl.style.fontWeight = 'normal';
             displayEl.dataset.preLoket = '';
             displayEl.dataset.preRoom = '';
         }
@@ -285,12 +253,10 @@ function togglePasswordInput() {
     if (passGroup) {
         if (isPrivate) {
             passGroup.classList.remove('hidden');
-            const passInput = document.getElementById('room-password');
-            if(passInput) passInput.focus();
+            document.getElementById('room-password').focus();
         } else {
             passGroup.classList.add('hidden');
-            const passInput = document.getElementById('room-password');
-            if(passInput) passInput.value = '';
+            document.getElementById('room-password').value = '';
         }
     }
 }
@@ -341,24 +307,17 @@ function processBooking() {
         return;
     }
 
-    let videoTitle = 'Unknown Movie';
-    if (verifiedVideoData && verifiedVideoData.title) {
-        videoTitle = verifiedVideoData.title;
-    } else if (selectedMovie) {
-        videoTitle = selectedMovie.title;
-    }
-
+    const videoTitle = verifiedVideoData.title || selectedMovie.title;
     const sourceInput = document.getElementById('room-video-source');
     const sourceType = sourceInput ? sourceInput.value : 'unknown';
 
-    if (!timeValue) { showToast('Pilih jadwal tayang terlebih dahulu!', 'error'); return; }
-
+    if (!timeValue) { showToast('Pilih jadwal tayang!', 'error'); return; }
     const scheduleTime = new Date(timeValue).getTime();
     const now = Date.now();
-    if (scheduleTime <= now) { showToast('Jadwal harus minimal 1 menit dari sekarang!', 'error'); return; }
+    if (scheduleTime <= now) { showToast('Jadwal harus > 1 menit dari sekarang!', 'error'); return; }
 
     const quotaDisplay = document.getElementById('quota-display');
-    const quota = quotaDisplay ? parseInt(quotaDisplay.textContent) || randomQuota() : randomQuota();
+    const quota = quotaDisplay ? parseInt(quotaDisplay.textContent) : randomQuota();
     
     const visibilityInput = document.querySelector('input[name="roomVisibility"]:checked');
     const visibility = visibilityInput ? visibilityInput.value : 'public';
@@ -367,10 +326,7 @@ function processBooking() {
     if (visibility === 'private') {
         const passInput = document.getElementById('room-password');
         const passValue = passInput ? passInput.value.trim() : '';
-        if (!passValue) {
-            showToast('Masukkan password untuk room Private!', 'error');
-            return;
-        }
+        if (!passValue) { showToast('Masukkan password!', 'error'); return; }
         password = passValue;
     }
 
@@ -382,7 +338,7 @@ function processBooking() {
     if (preLoket && preRoom) {
         const globalNum = loketRoomToGlobal(preLoket, preRoom);
         if (occupiedRooms[globalNum]) {
-            showToast('Room ini sudah diambil orang lain! Pilih room lain.', 'error');
+            showToast('Room ini sudah diambil orang lain!', 'error');
             renderLoket();
             return;
         }
@@ -390,16 +346,14 @@ function processBooking() {
         room = preRoom;
     } else {
         const result = findAvailableRoom();
-        if (!result) {
-            showToast('Semua room penuh! Coba lagi nanti.', 'error');
-            return;
-        }
+        if (!result) { showToast('Semua room penuh!', 'error'); return; }
         loket = result.loket;
         room = result.room;
     }
 
     const globalNum = loketRoomToGlobal(loket, room);
-
+    const newRef = db.ref('rooms').push();
+    
     const roomObj = {
         loket: loket,
         room: room,
@@ -412,26 +366,19 @@ function processBooking() {
         scheduleTime: scheduleTime,
         createdAt: firebase.database.ServerValue.TIMESTAMP,
         phase: 'waiting',
-        tier: currentTier,
-        hostUsername: myUsername,
+        hostUsername: myUsername, // User who created is host
         playState: 0,
         currentTime: 0,
         lastSync: firebase.database.ServerValue.TIMESTAMP,
         visibility: visibility,
         password: password,
-        roomId: null
+        roomId: newRef.key
     };
-
-    tempRoomData = { ...roomObj, roomId: null };
-    const newRef = db.ref('rooms').push();
-    tempRoomData.roomId = newRef.key;
-    roomObj.roomId = newRef.key;
 
     newRef.set(roomObj).then(() => {
         showPrinterAnimation(loket, room, quota, newRef.key, roomObj);
     }).catch(err => {
         showToast('Gagal membuat room: ' + err.message, 'error');
-        console.error(err);
     });
 }
 
@@ -442,34 +389,35 @@ function showPrinterAnimation(loket, room, quota, roomId, roomObj) {
     if(container) {
         container.innerHTML = `
             <div class="ticket-printing">
-                <div style="font-size:.7rem;margin-bottom:6px;opacity:.7">ThMOvie CINEMA</div>
+                <div style="font-size:.7rem;margin-bottom:6px;opacity:.7">ThMOvie</div>
                 <div style="font-size:1.4rem;margin-bottom:4px">LOKET ${loket}</div>
                 <div style="font-size:1.1rem">ROOM ${room}</div>
-                <div style="font-size:.65rem;margin-top:8px;border-top:1px dashed rgba(255,255,255,.3);padding-top:6px;line-height:1.4">
+                <div style="font-size:.65rem;margin-top:8px;border-top:1px dashed rgba(0,0,0,.3);padding-top:6px;">
                     Kapasitas: ${quota} Kursi<br>
-                    ID: ${roomId.slice(0,8)}...<br>
-                    ${roomObj.videoSource === 'seekstream' ? '📡 EMBEDSEEK' : '📺 YOUTUBE'}<br>
-                    ${roomObj.visibility === 'private' ? '🔒 PRIVATE ROOM' : '🔓 PUBLIC ROOM'}<br>
-                    Enjoy Your Movie!
+                    Film: ${roomObj.videoTitle}
                 </div>
             </div>
         `;
     }
     setTimeout(() => {
         if(overlay) overlay.classList.remove('active');
+        // Pemanggil room sekarang ini adalah Host
         enterCinema(roomId, roomObj, true);
-    }, 2600);
+    }, 2500);
 }
 
 // --- CINEMA & PLAYER ---
-function enterCinema(roomId, room, isHost) {
+function enterCinema(roomId, room, hostStatus) {
     cleanupCinema();
     currentRoomId = roomId;
     roomData = room;
+    isHost = hostStatus; // Set status host
+    
     dbRoomRef = db.ref('rooms/' + roomId);
     dbChatRef = db.ref('rooms/' + roomId + '/chat');
     dbPresenceRef = db.ref('rooms/' + roomId + '/presence/' + myUsername);
 
+    // UI Updates
     const endOverlay = document.getElementById('end-screen-overlay');
     if(endOverlay) endOverlay.classList.remove('active');
 
@@ -477,7 +425,7 @@ function enterCinema(roomId, room, isHost) {
     if(badge) badge.textContent = 'LOKET ' + room.loket + ' | ROOM ' + room.room;
     
     const title = document.getElementById('cinema-movie-title');
-    if(title) title.textContent = room.videoTitle || 'Unknown Movie';
+    if(title) title.textContent = room.videoTitle;
     
     const countInfo = document.getElementById('countdown-room-info');
     if(countInfo) countInfo.innerHTML = 'Loket <strong>' + room.loket + '</strong> • Room <strong>' + room.room + '</strong>';
@@ -488,10 +436,8 @@ function enterCinema(roomId, room, isHost) {
     const loading = document.getElementById('cinema-loading');
     if(loading) loading.style.display = 'flex';
     
-    const syncInd = document.getElementById('sync-indicator');
-    if(syncInd) {
-        syncInd.style.display = (room.videoSource === 'youtube') ? 'flex' : 'none';
-    }
+    const hostControls = document.getElementById('host-controls');
+    if(hostControls) hostControls.style.display = isHost ? 'flex' : 'none';
 
     updateURL(roomId);
 
@@ -499,7 +445,7 @@ function enterCinema(roomId, room, isHost) {
         dbPresenceRef.set({
             username: myUsername,
             joinedAt: firebase.database.ServerValue.TIMESTAMP,
-            isHost: !!isHost
+            isHost: isHost
         });
         dbPresenceRef.onDisconnect().remove();
     }
@@ -510,11 +456,14 @@ function enterCinema(roomId, room, isHost) {
 
     setupChat();
     setupPresenceListener();
+    
+    // Setup Main Room Listener for Sync
     dbRoomRef.on('value', handleRoomUpdate);
 
     if (room.phase === 'waiting') {
         startCountdown();
     } else if (room.phase === 'playing') {
+        // Masuk saat film sedang jalan
         const countdownOverlay = document.getElementById('countdown-overlay');
         if(countdownOverlay) countdownOverlay.style.display = 'none';
         initMainPlayer(room); 
@@ -536,9 +485,8 @@ function cleanupCinema() {
     if (dbRoomRef) { dbRoomRef.off(); dbRoomRef = null; }
     if (dbChatRef) { dbChatRef.off(); dbChatRef = null; }
     if (dbPresenceRef) { dbPresenceRef.remove(); dbPresenceRef = null; }
+    
     isSyncing = false;
-    lastSyncState = -1;
-    lastSyncTime = -1;
     isPreRollPlaying = false;
 
     const cinemaView = document.getElementById('cinema-view');
@@ -550,8 +498,8 @@ function cleanupCinema() {
     const loading = document.getElementById('cinema-loading');
     if(loading) loading.style.display = 'none';
     
-    const syncInd = document.getElementById('sync-indicator');
-    if(syncInd) syncInd.style.display = 'none';
+    const hostControls = document.getElementById('host-controls');
+    if(hostControls) hostControls.style.display = 'none';
     
     const endOverlay = document.getElementById('end-screen-overlay');
     if(endOverlay) endOverlay.classList.remove('active');
@@ -566,18 +514,13 @@ function cleanupCinema() {
     if(playerContainer) playerContainer.innerHTML = '';
 }
 
-// --- CHAT & PRESENCE ---
+// --- CHAT ---
 function setupChat() {
     const box = document.getElementById('chat-messages');
     if(!box) return;
     box.innerHTML = '';
-    addChatMessage('system', '🎬 Selamat datang di ThMOvie Watch Party!');
-    addChatMessage('system', '💡 Bagikan URL room ke teman agar bisa bergabung');
-    if (roomData && roomData.videoSource === 'youtube') {
-        addChatMessage('system', '🔒 Video dikunci — sinkronisasi otomatis aktif');
-    } else {
-        addChatMessage('system', '⚠️ Sinkronisasi manual (SeekStreaming) - Silakan play sendiri.');
-    }
+    addChatMessage('system', 'Selamat datang! Sinkronisasi aktif.');
+    if(isHost) addChatMessage('system', 'Anda adalah HOST. Gunakan tombol di bawah player untuk mengontrol.');
 
     dbChatRef.orderByChild('timestamp').limitToLast(50).on('child_added', snap => {
         const msg = snap.val();
@@ -592,15 +535,14 @@ function addChatMessage(type, text, sender) {
     
     const div = document.createElement('div');
     div.className = 'chat-message ' + type;
+    const safeText = (text || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    
     if (type === 'system') {
-        div.innerHTML = '<div class="chat-bubble">' + text + '</div>';
+        div.innerHTML = `<div class="chat-bubble">${safeText}</div>`;
     } else {
-        const safeText = (text || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        const safeSender = (sender || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        div.innerHTML = '<div class="chat-sender">' + safeSender + '</div><div class="chat-bubble">' + safeText + '</div>';
+        div.innerHTML = `<div class="chat-sender">${sender}</div><div class="chat-bubble">${safeText}</div>`;
     }
     box.appendChild(div);
-    while (box.children.length > 50) box.removeChild(box.firstChild);
     box.scrollTop = box.scrollHeight;
 }
 
@@ -640,7 +582,7 @@ function setupPresenceListener() {
     });
 }
 
-// --- COUNTDOWN & SYNC ---
+// --- COUNTDOWN ---
 function startCountdown() {
     const timerEl = document.getElementById('countdown-timer');
     const overlay = document.getElementById('countdown-overlay');
@@ -655,13 +597,13 @@ function startCountdown() {
         const diff = roomData.scheduleTime - Date.now();
         
         if (diff <= 0) {
-            // WAKTU HABIS -> AUTOPLAY
+            // Waktu habis -> AUTOPLAY (Triggered by logic)
             clearInterval(countdownInterval);
             countdownInterval = null;
             overlay.style.display = 'none';
             
-            // Update DB agar semua user tahu harus main
-            if (roomData.phase === 'waiting') {
+            // HANYA HOST yang boleh mengupdate DB ke Playing
+            if (isHost) {
                 dbRoomRef.update({ phase: 'playing', playState: 1, currentTime: 0, lastSync: firebase.database.ServerValue.TIMESTAMP });
             }
             return;
@@ -675,20 +617,7 @@ function startCountdown() {
     countdownInterval = setInterval(tick, 1000);
 }
 
-function startPreRoll(room) {
-    isPreRollPlaying = true;
-    showToast('Memutar iklan pembuka...', 'success');
-    addChatMessage('system', '📺 Memutar iklan pembuka...');
-    initYoutubePlayer(PRE_ROLL_VIDEO_ID);
-    
-    setTimeout(() => {
-        if (!isPreRollPlaying) return; 
-        isPreRollPlaying = false;
-        addChatMessage('system', '✅ Iklan selesai. Memutar film utama...');
-        initMainPlayer(room);
-    }, PRE_ROLL_DURATION_SEC * 1000);
-}
-
+// --- PLAYER INITIALIZATION ---
 function initMainPlayer(room) {
     if (room.videoSource === 'seekstream') {
         initSeekPlayer(room.videoUrl);
@@ -697,7 +626,37 @@ function initMainPlayer(room) {
     }
 }
 
-// --- YOUTUBE PLAYER WRAPPER (UPDATED ANTI-SEEK) ---
+// --- HOST CONTROLS ---
+function forceStartPlayback() {
+    if (!isHost) return;
+    dbRoomRef.update({
+        phase: 'playing',
+        playState: 1,
+        currentTime: 0,
+        lastSync: firebase.database.ServerValue.TIMESTAMP
+    });
+    showToast('Memulai film untuk semua...', 'success');
+}
+
+function togglePauseAll() {
+    if (!isHost || !playerReady) return;
+    
+    // Get current state from player
+    const state = player.getPlayerState();
+    const isPlaying = (state === YT.PlayerState.PLAYING);
+    
+    // Toggle
+    const newState = isPlaying ? 0 : 1;
+    const currentTime = player.getCurrentTime();
+    
+    dbRoomRef.update({
+        playState: newState,
+        currentTime: currentTime,
+        lastSync: firebase.database.ServerValue.TIMESTAMP
+    });
+}
+
+// --- YOUTUBE PLAYER WRAPPER (FIXED SYNC) ---
 function initYoutubePlayer(videoId) {
     const loading = document.getElementById('cinema-loading');
     if(loading) loading.style.display = 'flex';
@@ -719,9 +678,9 @@ function initYoutubePlayer(videoId) {
             width: '100%',
             videoId: videoId,
             playerVars: {
-                autoplay: 1,       // PENTING: Autoplay ON
-                controls: 1,      // Tampilkan kontrol (untuk skip iklan)
-                disablekb: 1,      // PENTING: Matikan keyboard shortcut (panah kiri/kanan)
+                autoplay: 1,       // Autoplay ON
+                controls: 1,       
+                disablekb: 0,      // Enable keyboard control for host
                 fs: 1,
                 modestbranding: 1,
                 rel: 0,
@@ -737,7 +696,6 @@ function initYoutubePlayer(videoId) {
         });
     } else {
         console.error("YouTube API not loaded");
-        showToast('Memuat ulang player YouTube...', 'error');
         setTimeout(() => initYoutubePlayer(videoId), 2000);
     }
 }
@@ -747,80 +705,41 @@ function onPlayerReady(e) {
     const loading = document.getElementById('cinema-loading');
     if(loading) loading.style.display = 'none';
     
-    e.target.playVideo();
+    // SINKRONISASI AWAL
+    if (roomData && roomData.phase === 'playing') {
+        // Jika film sedang berjalan saat kita masuk
+        if (roomData.currentTime > 0) {
+            player.seekTo(roomData.currentTime, true);
+        }
+        if (roomData.playState === 1) {
+            player.playVideo();
+        } else {
+            player.pauseVideo();
+        }
+    }
     
-    // Start Sync Loop cepat (500ms) untuk mencegah seek
-    startSyncLoop(500);
+    startSyncLoop(1000); // Sync every 1 second
 }
 
 function onPlayerStateChange(e) {
     if (!playerReady || playerType !== 'youtube') return;
-    const ytState = e.data; 
-    if (ytState === YT.PlayerState.ENDED) {
-        const endOverlay = document.getElementById('end-screen-overlay');
-        if(endOverlay) endOverlay.classList.add('active');
+    
+    // Jika video selesai
+    if (e.data === YT.PlayerState.ENDED) {
         if (dbRoomRef) {
-            dbRoomRef.update({ phase: 'ended', playState: 0, lastSync: firebase.database.ServerValue.TIMESTAMP });
+            dbRoomRef.update({ phase: 'ended', playState: 0 });
         }
-        addChatMessage('system', '🎬 Film telah selesai. Terima kasih!');
+        addChatMessage('system', 'Film telah selesai.');
     }
 }
 
 function onPlayerError(e) {
     console.error('Player error:', e.data);
-    showToast('Terjadi kesalahan pada video', 'error');
+    showToast('Error memuat video', 'error');
 }
 
-// --- SEEKSTREAM PLAYER WRAPPER (LOCKED OVERLAY) ---
-function initSeekPlayer(url) {
-    const loading = document.getElementById('cinema-loading');
-    if(loading) loading.style.display = 'flex';
-    
-    const container = document.getElementById('player-container');
-    if(container) container.innerHTML = '';
-    
-    playerReady = false;
-    playerType = 'seekstream';
-
-    if (!url) return;
-
-    // Wrapper
-    const wrapper = document.createElement('div');
-    wrapper.style.position = 'relative';
-    wrapper.style.width = '100%';
-    wrapper.style.height = '100%';
-
-    // Iframe
-    const iframe = document.createElement('iframe');
-    iframe.src = url;
-    iframe.style.width = '100%';
-    iframe.style.height = '100%';
-    iframe.style.border = 'none';
-    iframe.style.position = 'absolute';
-    iframe.style.top = '0';
-    iframe.style.left = '0';
-    iframe.style.zIndex = '10';
-    iframe.setAttribute('allowfullscreen', '');
-    iframe.setAttribute('allow', 'autoplay; fullscreen');
-    
-    // LOCK OVERLAY
-    const lockOverlay = document.createElement('div');
-    lockOverlay.className = 'seekstream-lock-overlay';
-    
-    wrapper.appendChild(iframe);
-    wrapper.appendChild(lockOverlay);
-    container.appendChild(wrapper);
-    
-    playerReady = true;
-    
-    setTimeout(() => {
-        if(loading) loading.style.display = 'none';
-        showToast('Film dimulai. Enjoy!', 'success');
-    }, 2000); 
-}
-
-// --- AGGRESSIVE SYNC LOOP (ANTI-SEEK) ---
-function startSyncLoop(intervalMs = 500) {
+// --- SYNC LOOP ---
+function startSyncLoop(intervalMs = 1000) {
     if (syncInterval) clearInterval(syncInterval);
 
     syncInterval = setInterval(() => {
@@ -832,20 +751,23 @@ function startSyncLoop(intervalMs = 500) {
             const playerState = player.getPlayerState();
             const isPlaying = (playerState === YT.PlayerState.PLAYING);
 
-            // Update server dengan posisi kita
-            dbRoomRef.update({
-                currentTime: currentPos,
-                playState: isPlaying ? 1 : 0,
-                lastSync: firebase.database.ServerValue.TIMESTAMP
-            });
+            // Host updates database continuously
+            if (isHost) {
+                dbRoomRef.update({
+                    currentTime: currentPos,
+                    playState: isPlaying ? 1 : 0,
+                    lastSync: firebase.database.ServerValue.TIMESTAMP
+                });
+            }
         } catch(e) {}
     }, intervalMs);
 }
 
+// --- HANDLE ROOM UPDATE (SINKRONISASI CLIENT) ---
 function handleRoomUpdate(snapshot) {
     const data = snapshot.val();
     if (!data) {
-        showToast('Room telah dihapus', 'error');
+        showToast('Room dihapus', 'error');
         cleanupCinema();
         showPage('home');
         return;
@@ -854,54 +776,59 @@ function handleRoomUpdate(snapshot) {
     const prevPhase = roomData ? roomData.phase : null;
     roomData = data;
 
-    // Transisi Waiting -> Playing (Autoplay Trigger)
+    // 1. Transisi Waiting -> Playing (Host triggers this)
     if (prevPhase === 'waiting' && data.phase === 'playing') {
         const overlay = document.getElementById('countdown-overlay');
         if(overlay) overlay.style.display = 'none';
         
-        if (PRE_ROLL_DURATION_SEC > 0) {
-            startPreRoll(data);
-        } else {
-            initMainPlayer(data); // Ini akan memanggil autoplay: 1
+        // Start player immediately when phase changes to playing
+        if (playerType === 'youtube' && player) {
+            player.seekTo(0);
+            player.playVideo();
+        } else if (!player) {
+            initMainPlayer(data);
         }
     }
 
-    if (data.phase === 'ended' && prevPhase !== 'ended') {
-        addChatMessage('system', '🎬 Room ini telah berakhir.');
-    }
-
-    // --- ANTI-SEEK LOGIC ---
+    // 2. Sync Play/Pause & Time (Real-time)
     if (playerReady && playerType === 'youtube' && data.phase === 'playing') {
         try {
             const myPos = player.getCurrentTime();
             const serverPos = data.currentTime || 0;
-            
-            // Hitung drift
-            let drift = myPos - serverPos;
-            const absDrift = Math.abs(drift);
-
-            // Jika user maju/mundurkan > 0.5 detik, paksa kembali
-            if (absDrift > 0.5 && !isSyncing) {
-                isSyncing = true;
-                console.log("Anti-Seek triggered");
-                player.seekTo(serverPos, true);
-                setTimeout(() => { isSyncing = false; }, 200);
-            }
-
-            // Sync Play/Pause
-            const shouldPlay = data.playState === 1;
+            const shouldPlay = (data.playState === 1);
             const myState = player.getPlayerState();
             const amPlaying = (myState === YT.PlayerState.PLAYING);
 
-            if (shouldPlay && !amPlaying && !isSyncing) player.playVideo();
-            if (!shouldPlay && amPlaying && !isSyncing) player.pauseVideo();
+            // Check Drift (Difference between me and host)
+            let drift = Math.abs(myPos - serverPos);
+
+            // Jika drift > 3 detik, seek kembali ke posisi server
+            if (drift > 3.0) {
+                console.log("Resyncing... Drift:", drift);
+                player.seekTo(serverPos, true);
+            }
+
+            // Jika status play/pause beda dengan server, sesuaikan
+            if (shouldPlay && !amPlaying) {
+                player.playVideo();
+            } else if (!shouldPlay && amPlaying) {
+                player.pauseVideo();
+            }
         } catch(e) {}
+    }
+    
+    // 3. Phase Ended
+    if (data.phase === 'ended' && prevPhase !== 'ended') {
+        const endOverlay = document.getElementById('end-screen-overlay');
+        if(endOverlay) endOverlay.classList.add('active');
+        if (player) player.stopVideo();
+        addChatMessage('system', 'Room berakhir.');
     }
 }
 
-// --- JOIN ROOM LOGIC ---
+// --- JOIN LOGIC ---
 function joinRoomById(roomId) {
-    if (!db) { showToast('Firebase tidak tersedia', 'error'); return; }
+    if (!db) { showToast('Firebase Error', 'error'); return; }
     pendingJoinRoomId = roomId;
 
     db.ref('rooms/' + roomId).once('value').then(snap => {
@@ -912,7 +839,7 @@ function joinRoomById(roomId) {
         }
         const room = snap.val();
         if (room.phase === 'ended') {
-            showToast('Room ini sudah selesai.', 'error');
+            showToast('Room sudah selesai.', 'error');
             pendingJoinRoomId = null;
             return;
         }
@@ -922,7 +849,7 @@ function joinRoomById(roomId) {
             passwordHtml = `
                 <div class="form-group">
                     <label class="form-label">Password Room</label>
-                    <input type="password" id="join-password" class="form-input" placeholder="Masukkan password...">
+                    <input type="password" id="join-password" class="form-input" placeholder="Password...">
                 </div>
             `;
         }
@@ -932,13 +859,12 @@ function joinRoomById(roomId) {
             modalBody.innerHTML = `
                 <div class="join-room-info">
                     <div class="room-id">LOKET ${room.loket} | ROOM ${room.room}</div>
-                    <div class="room-detail" style="font-size:1.1rem; font-weight:bold; margin-top:5px;">${room.videoTitle || 'Unknown Movie'}</div>
-                    <div class="room-detail">${room.videoSource === 'seekstream' ? '📡 SeekStreaming' : '📺 YouTube'}</div>
-                    <div class="room-detail">Kapasitas: ${room.capacity}</div>
+                    <div class="room-detail" style="font-size:1.1rem; font-weight:bold; margin-top:5px;">${room.videoTitle || 'Unknown'}</div>
+                    <div class="room-detail">${room.videoSource === 'seekstream' ? 'SeekStream' : 'YouTube'}</div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Nama Anda</label>
-                    <input type="text" id="join-username" class="form-input" placeholder="Masukkan nama..." value="${myUsername}" maxlength="20">
+                    <input type="text" id="join-username" class="form-input" placeholder="Nama..." value="${myUsername}" maxlength="20">
                 </div>
                 ${passwordHtml}
             `;
@@ -946,7 +872,7 @@ function joinRoomById(roomId) {
         const modal = document.getElementById('join-modal');
         if(modal) modal.classList.add('active');
     }).catch(err => {
-        showToast('Gagal memuat room: ' + err.message, 'error');
+        showToast('Gagal join: ' + err.message, 'error');
         pendingJoinRoomId = null;
     });
 }
@@ -971,23 +897,14 @@ function confirmJoinRoom() {
             }
             
             closeJoinModal();
-            if (!pendingJoinRoomId) return;
+            // Guest join = false
             enterCinema(pendingJoinRoomId, room, false);
             pendingJoinRoomId = null;
         });
     }
 }
 
-function closeJoinModal(e) {
-    if (e) {
-        const modal = document.getElementById('join-modal');
-        if (e.target !== modal) return;
-    }
-    const modal = document.getElementById('join-modal');
-    if(modal) modal.classList.remove('active');
-}
-
-// --- UI HELPERS ---
+// --- UTILS ---
 function showPage(page) {
     document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
     document.getElementById('cinema-view').classList.remove('active');
@@ -1006,12 +923,21 @@ function showPage(page) {
     window.scrollTo(0, 0);
 }
 
-function scrollToMovies() {
-    if (currentPage !== 'home') showPage('home');
+function showToast(message, type) {
+    const container = document.getElementById('toast-container');
+    if(!container) return;
+    
+    const toast = document.createElement('div');
+    toast.className = 'toast ' + (type || '');
+    let icon = 'ℹ️';
+    if (type === 'success') icon = '✅';
+    if (type === 'error') icon = '❌';
+    toast.innerHTML = '<span>' + icon + '</span><span>' + message + '</span>';
+    container.appendChild(toast);
     setTimeout(() => {
-        const el = document.getElementById('movies-section');
-        if(el) el.scrollIntoView({ behavior:'smooth' });
-    }, 100);
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 3500);
 }
 
 function updateURL(roomId) {
@@ -1025,21 +951,19 @@ function copyRoomUrl() {
     if (!currentRoomId) return;
     const url = window.location.href;
     navigator.clipboard.writeText(url).then(() => {
-        showToast('URL room berhasil disalin!', 'success');
+        showToast('URL disalin!', 'success');
     }).catch(() => {
-        showToast('Gagal menyalin URL', 'error');
+        showToast('Gagal menyalin', 'error');
     });
 }
 
+// Modals
 function confirmExit() {
     const modal = document.getElementById('exit-modal');
     if(modal) modal.classList.add('active');
 }
 function closeExitModal(e) {
-    if (e) {
-        const modal = document.getElementById('exit-modal');
-        if (e.target !== modal) return;
-    } else {
+    if (!e || e.target.id === 'exit-modal') {
         const modal = document.getElementById('exit-modal');
         if(modal) modal.classList.remove('active');
     }
@@ -1061,33 +985,17 @@ function toggleFullscreen() {
 }
 
 function showRules() {
-    const modal = document.getElementById('rules-modal');
-    if(modal) modal.classList.add('active');
+    document.getElementById('rules-modal').classList.add('active');
 }
 function closeRules(e) {
     if (!e || e.target.id === 'rules-modal' || e.target.tagName === 'BUTTON') {
-        const modal = document.getElementById('rules-modal');
-        if(modal) modal.classList.remove('active');
+        document.getElementById('rules-modal').classList.remove('active');
     }
 }
-
-function showToast(message, type) {
-    const container = document.getElementById('toast-container');
-    if(!container) return;
-    
-    const toast = document.createElement('div');
-    toast.className = 'toast ' + (type || '');
-    let icon = 'ℹ️';
-    if (type === 'success') icon = '✅';
-    if (type === 'error') icon = '❌';
-    toast.innerHTML = '<span>' + icon + '</span><span>' + message + '</span>';
-    container.appendChild(toast);
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateX(100%)';
-        toast.style.transition = 'all .3s';
-        setTimeout(() => toast.remove(), 300);
-    }, 3500);
+function closeJoinModal(e) {
+    if (!e || e.target.id === 'join-modal') {
+        document.getElementById('join-modal').classList.remove('active');
+    }
 }
 
 // --- MAIN INIT ---
@@ -1099,13 +1007,7 @@ window.onload = function() {
 
     window.addEventListener('scroll', () => {
         const nav = document.getElementById('nav-header');
-        if(nav) nav.classList.toggle('scrolled', window.scrollY > 40);
-    });
-
-    window.addEventListener('beforeunload', () => {
-        if (currentRoomId && dbPresenceRef) {
-            dbPresenceRef.remove();
-        }
+        if(nav) nav.classList.toggle('scrolled', window.scrollY > 20);
     });
 };
 
@@ -1125,31 +1027,22 @@ setInterval(() => {
     db.ref('rooms').once('value').then(snap => {
         if (!snap.exists()) return;
         const updates = {};
-        const toRemove = [];
         snap.forEach(child => {
             const room = child.val();
-            if (!room) return;
             const key = child.key;
-            // Auto Start
+            // Auto Start logic (Backup if client host fails)
             if (room.phase === 'waiting' && room.scheduleTime && now >= room.scheduleTime) {
                 updates[key + '/phase'] = 'playing';
                 updates[key + '/playState'] = 1;
-                updates[key + '/currentTime'] = 0;
             }
-            // Auto End (5 hours after start)
+            // Auto End
             if (room.phase === 'playing' && room.scheduleTime && (now - room.scheduleTime > 5 * 60 * 60 * 1000)) {
                 updates[key + '/phase'] = 'ended';
-                updates[key + '/playState'] = 0;
-            }
-            // Cleanup (24 hours)
-            if (room.scheduleTime && (now - room.scheduleTime > 24 * 60 * 60 * 1000)) {
-                toRemove.push(key);
             }
         });
         if (Object.keys(updates).length > 0) db.ref('rooms').update(updates);
-        toRemove.forEach(key => db.ref('rooms/' + key).remove());
     }).catch(() => {});
-}, 8000);
+}, 5000);
 
 setInterval(() => {
     if (currentPage === 'loket') {
