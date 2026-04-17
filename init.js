@@ -63,35 +63,18 @@ function globalToLoketRoom(globalNum) {
 function getVideoSource(url) {
     if (!url) return null;
     
-    // YouTube Parsing (Robust)
+    // YouTube Parsing
     const ytRegex = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const ytMatch = url.match(ytRegex);
     if (ytMatch && ytMatch[2].length === 11) {
         return { type: 'youtube', id: ytMatch[2] };
     }
     
-    // Google Drive Parsing (Fixed & Robust)
-    // Mendukung format: /view, /preview, /edit, dan format pendek /d/ID
-    if (url.includes('drive.google.com')) {
-        let id = null;
-        // Pattern 1: /file/d/ID/...
-        const pattern1 = /\/file\/d\/([a-zA-Z0-9_-]+)/;
-        const match1 = url.match(pattern1);
-        if (match1 && match1[1]) {
-            id = match1[1];
-        }
-        
-        // Pattern 2: /open?id=ID
-        if (!id) {
-            const pattern2 = /[?&]id=([a-zA-Z0-9_-]+)/;
-            const match2 = url.match(pattern2);
-            if (match2 && match2[1]) id = match2[1];
-        }
-
-        if (id) {
-            return { type: 'drive', id: id, url: url };
-        }
+    // SeekStreaming Detection (Simple check for our embed domain)
+    if (url.includes('embedseek.com')) {
+        return { type: 'seekstream', url: url };
     }
+
     return null;
 }
 
