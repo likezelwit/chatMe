@@ -759,6 +759,7 @@ function initSeekPlayer(url) {
 
     // Iframe
     const iframe = document.createElement('iframe');
+    iframe.id = 'seekstream-iframe'; // ID buat referensi
     iframe.src = url;
     iframe.style.width = '100%';
     iframe.style.height = '100%';
@@ -768,7 +769,8 @@ function initSeekPlayer(url) {
     iframe.style.left = '0';
     iframe.style.zIndex = '10';
     iframe.setAttribute('allowfullscreen', '');
-    iframe.setAttribute('allow', 'autoplay; fullscreen'); // MENDUKUNG AUTOPLAY
+    // WAJIB: 'autoplay' di allow biar browser ngizinin
+    iframe.setAttribute('allow', 'autoplay; fullscreen');
     
     wrapper.appendChild(iframe);
     container.appendChild(wrapper);
@@ -804,7 +806,7 @@ function startSyncLoop(intervalMs = 1000) {
     }, intervalMs);
 }
 
-// --- HANDLE ROOM UPDATE (SINKRONISASI CLIENT) ---
+// --- HANDLE ROOM UPDATE (UPDATED SEEKSTREAM AUTOPLAY) ---
 function handleRoomUpdate(snapshot) {
     const data = snapshot.val();
     if (!data) {
@@ -822,11 +824,37 @@ function handleRoomUpdate(snapshot) {
         const overlay = document.getElementById('countdown-overlay');
         if(overlay) overlay.style.display = 'none';
         
-        // Start player immediately when phase changes to playing
+        // LOGIKA UTAMA: YOUTUBE VS SEEKSTREAM
         if (playerType === 'youtube' && player) {
+            // YOUTUBE: Paksa play via API
             player.seekTo(0);
             player.playVideo();
-        } else if (!player) {
+        } 
+        else if (playerType === 'seekstream') {
+            // SEEKSTREAM: TRICK AUTOPLAY MELALUI RELOAD
+            const iframe = document.querySelector('#player-container iframe');
+            if (iframe) {
+                let src = data.videoUrl;
+                
+                // Cek pemisah parameter
+                let separator = src.includes('?') ? '&' : '?';
+                let autoplayParams = separator + 'autoplay=1&muted=1';
+                
+                // Handle Hash Fragment (Contoh: embedseek.com/#id)
+                // Parameter harus ditaruh SEBELUM #
+                if (src.includes('#')) {
+                    let parts = src.split('#');
+                    src = parts[0] + autoplayParams + '#' + parts[1];
+                } else {
+                    src = src + autoplayParams;
+                }
+
+                // Reload iframe agar video jalan otomatis (muted)
+                iframe.src = src; 
+                showToast('Video dimulai (Muted)', 'success');
+            }
+        }
+        else if (!player) {
             initMainPlayer(data);
         }
     }
@@ -840,10 +868,8 @@ function handleRoomUpdate(snapshot) {
             const myState = player.getPlayerState();
             const amPlaying = (myState === YT.PlayerState.PLAYING);
 
-            // Check Drift (Difference between me and host)
+            // Check Drift
             let drift = Math.abs(myPos - serverPos);
-
-            // Jika drift > 3 detik, seek kembali ke posisi server
             if (drift > 3.0) {
                 console.log("Resyncing... Drift:", drift);
                 player.seekTo(serverPos, true);
